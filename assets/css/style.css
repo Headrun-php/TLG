@@ -1,0 +1,110 @@
+.dashboardTable{
+	
+	font-size:12px;
+}
+
+
+.headerSearchInput{
+	
+	background-color:#438FDA !important;
+	border: 1px solid;
+	float:left;
+    width: 60%;
+    border-color: #2967A5;
+    box-sizing: border-box;
+    border-radius: 0;
+    vertical-align: top;
+    padding: 8px 0 6px; 
+    font-size: 16px;
+    height: auto;
+    background: 0 0;
+    color: #fff !important;
+}
+
+.buttonSearch{
+	
+	float:left;
+}
+
+table tr:hover{
+	cursor:pointer;
+	background-color:#eeeeee !important;
+}
+
+
+.disabled{
+	border-color:#e3e3e3 !important;
+}
+
+
+.radio-custom-label.disabled:before{
+	border-color:#e3e3e3 !important;
+}
+
+
+/* end only demo styles */
+
+.checkbox-custom, .radio-custom {
+    opacity: 0;
+    position: absolute;   
+}
+
+.checkbox-custom, .checkbox-custom-label, .radio-custom, .radio-custom-label {
+    display: inline-block;
+    vertical-align: middle;
+    margin: 5px;
+    margin-top:3px;
+    cursor: pointer;
+}
+
+.checkbox-custom-label, .radio-custom-label {
+    position: relative;
+}
+
+radio.radio-custom + .disabled{
+	 border: 2px solid #e3e3e3 !important;
+	
+}
+
+button.disabled{
+	 background-color:#e3e3e3 !important;
+}
+
+
+
+.checkbox-custom + .checkbox-custom-label:before, .radio-custom + .radio-custom-label:before {
+    content: '';
+    background: #fff;
+    border: 2px solid #009688;
+    display: inline-block;
+    vertical-align: middle;
+    width: 23px;
+    height: 23px;
+   /*  padding: 2px;
+    margin-right: 10px; */
+    
+    margin: 0px 5px 3px 15px;
+    text-align: center;
+}
+
+.checkbox-custom:checked + .checkbox-custom-label:before {
+    content: "\f00c";
+    font-family: 'FontAwesome';
+    background: rebeccapurple;
+    color: #fff;
+    padding:0px;
+}
+
+.radio-custom + .radio-custom-label:before {
+    border-radius: 50%;
+}
+
+.radio-custom:checked + .radio-custom-label:before {
+    content: "\f00c";
+    font-family: 'FontAwesome';
+    color: #009688;
+}
+
+.checkbox-custom:focus + .checkbox-custom-label, .radio-custom:focus + .radio-custom-label {
+  outline: 1px solid #ddd; /* focus style */
+}
