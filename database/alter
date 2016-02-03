@@ -1,0 +1,197 @@
+ALTER TABLE `students` ADD `profile_image` VARCHAR(255) NOT NULL AFTER `student_date_of_birth`;
+
+ALTER TABLE `customers` ADD `profile_image` VARCHAR(255) NOT NULL AFTER `source`;
+
+
+-- Dec 1 2015
+ALTER TABLE `customers` CHANGE `source` `source` ENUM('word of mouth','grassroots','walkin','events') CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL;
+ALTER TABLE `customers` CHANGE `source_event` `source_event` INT(11) UNSIGNED NULL;
+ALTER TABLE `customers` ADD INDEX(`source_event`);
+
+
+ALTER TABLE `customers` ADD CONSTRAINT `source_event_fk` FOREIGN KEY (`source_event`) REFERENCES `events`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
+
+
+
+ALTER TABLE `events` ADD `event_description` VARCHAR(255) NOT NULL AFTER `name`;
+
+
+-- December 2
+
+ALTER TABLE `batch_schedule` ADD `birthday_party_id` INT NULL AFTER `schedule_type`;
+
+ALTER TABLE `orders` ADD `amount` INT NULL AFTER `cheque_number`;
+
+
+CREATE TABLE IF NOT EXISTS `birthday_parties` (
+  `id` int(11) NOT NULL,
+  `customer_id` int(11) NOT NULL,
+  `student_id` int(11) NOT NULL,
+  `additional_number_of_guests` int(11) NOT NULL,
+  `additional_half_hours` int(11) NOT NULL,
+  `birthday_party_date` date NOT NULL,
+  `birthday_party_time` time NOT NULL,
+  `created_at` datetime NOT NULL,
+  `created_by` int(11) NOT NULL,
+  `updated_at` datetime NOT NULL,
+  `updated_by` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+
+ALTER TABLE `birthday_parties`
+  ADD PRIMARY KEY (`id`);
+
+
+ALTER TABLE `birthday_parties`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  
+  
+
+CREATE TABLE IF NOT EXISTS `membership_types` (
+  `id` int(10) unsigned NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `description` varchar(255) NOT NULL,
+  `fee_amount` int(11) NOT NULL,
+  `created_at` datetime NOT NULL,
+  `created_by` int(11) NOT NULL,
+  `updated_at` datetime NOT NULL,
+  `updated_by` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+
+ALTER TABLE `membership_types`
+  ADD PRIMARY KEY (`id`);
+
+ALTER TABLE `membership_types`
+  MODIFY `id` int(10) unsigned NOT NULL AUTO_INCREMENT;  
+  
+ ALTER TABLE `membership_types` ADD `year_interval` INT NOT NULL AFTER `description`;
+ ALTER TABLE `membership_types` CHANGE `updated_at` `updated_at` DATETIME NULL DEFAULT NULL, CHANGE `updated_by` `updated_by` INT(11) NULL DEFAULT NULL;
+ 
+ INSERT INTO `membership_types` (`id`, `name`, `description`, `year_interval`, `fee_amount`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES (NULL, 'Annual', 'Annual Membership', '1', '2000', '2015-12-02 00:00:00', '1', '', ''), (NULL, 'Lifetime', 'Lifetime Membership', '0', '5000', '2015-12-02 00:00:00', '1', '', '');
+  
+  
+ CREATE TABLE `customer_membership` ( `id` INT UNSIGNED NULL AUTO_INCREMENT , `customer_id` INT NOT NULL , `membership_type_id` INT NOT NULL , `status` VARCHAR(20) NOT NULL , `action` ENUM('default','upgraded','downgraded','cancelled') NOT NULL , `created_by` INT NOT NULL , `created_at` DATETIME NOT NULL , `updated_by` INT NOT NULL , `updated_at` DATETIME NOT NULL , `membership_start_date` DATE NOT NULL , `membership_end_date` DATE NULL DEFAULT NULL , PRIMARY KEY (`id`)) ENGINE = InnoDB;
+  
+ ALTER TABLE `customer_membership` ADD INDEX(`customer_id`);
+ ALTER TABLE `customer_membership` CHANGE `customer_id` `customer_id` INT(11) UNSIGNED NOT NULL;
+ ALTER TABLE `customer_membership` ADD CONSTRAINT `customer_id_fk` FOREIGN KEY (`customer_id`) REFERENCES `customers`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
+  
+  
+ -- Dec 3
+ ALTER TABLE `birthday_parties` ADD `additional_guest_price` INT NOT NULL AFTER `additional_half_hours`, ADD `additional_halfhour_price` INT NOT NULL AFTER `additional_guest_price`, ADD `grand_total` INT NOT NULL AFTER `additional_halfhour_price`;
+ ALTER TABLE `birthday_parties` CHANGE `updated_at` `updated_at` DATETIME NULL, CHANGE `updated_by` `updated_by` INT(11) NULL;
+ 
+ ALTER TABLE `birthday_parties` ADD INDEX(`student_id`);
+ ALTER TABLE `birthday_parties` ADD INDEX(`customer_id`);
+ 
+ ALTER TABLE `birthday_parties` CHANGE `customer_id` `customer_id` INT(11) UNSIGNED NOT NULL, CHANGE `student_id` `student_id` INT(11) UNSIGNED NOT NULL;
+ ALTER TABLE `birthday_parties` ADD CONSTRAINT `cust_id_fk` FOREIGN KEY (`customer_id`) REFERENCES `customers`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
+ ALTER TABLE `birthday_parties` ADD CONSTRAINT `student_ids_fk` FOREIGN KEY (`student_id`) REFERENCES `students`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
+ ALTER TABLE `birthday_parties` ADD `advance_amount_paid` INT NOT NULL AFTER `student_id`; 
+  
+ALTER TABLE `birthday_parties` ADD `remaining_due_amount` INT NOT NULL AFTER `advance_amount_paid`;
+
+
+-- Dec 06
+ALTER TABLE `orders` ADD `payment_for` ENUM('membership','enrollment','birthday','') NOT NULL AFTER `customer_id`;
+ALTER TABLE `orders` CHANGE `amount` `amount` DECIMAL(10,2) NULL DEFAULT NULL;
+
+ALTER TABLE `student_classes` ADD `enrollment_start_date` DATE NOT NULL AFTER `batch_id`, ADD `enrollment_end_date` DATE NOT NULL AFTER `enrollment_start_date`;
+
+
+
+
+ALTER TABLE `batch_schedule` ADD INDEX(`student_id`);
+ALTER TABLE `batch_schedule` CHANGE `student_id` `student_id` INT(11) UNSIGNED NOT NULL;
+
+
+
+-- DEC 10
+
+
+
+ALTER TABLE `customers` CHANGE `stage` `stage` INT NOT NULL;
+ALTER TABLE `customers` ADD INDEX(`stage`);
+ALTER TABLE `customers` ADD CONSTRAINT `stage_fk` FOREIGN KEY (`stage`) REFERENCES `customer_status`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
+
+
+
+
+
+
+-- Dec 11
+
+
+ALTER TABLE `customers` CHANGE `stage` `stage` ENUM('INITIATED','IV REQUESTED','IV SCHEDULED','IV ATTENDED','IV NO SHOW','IV ENROLLED') NOT NULL;
+
+
+CREATE TABLE IF NOT EXISTS `introvisit` (
+  `id` int(11) NOT NULL,
+  `customer_id` int(10) unsigned NOT NULL,
+  `student_id` int(10) unsigned NOT NULL,
+  `franchisee_id` int(10) unsigned NOT NULL,
+  `iv_date` datetime NOT NULL,
+  `created_at` datetime NOT NULL,
+  `created_by` int(11) NOT NULL,
+  `updated_at` datetime NOT NULL,
+  `updated_by` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+ALTER TABLE `introvisit`
+  ADD PRIMARY KEY (`id`);
+  
+  ALTER TABLE `introvisit`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  
+  
+  ALTER TABLE `customer_logs`
+  DROP `comment_text`,
+  DROP `reminder_date`,
+  DROP `reminder_status`,
+  DROP `reminder_type`;
+  
+  
+  ALTER TABLE `customer_logs` ADD `log_text` VARCHAR(255) NOT NULL AFTER `franchisee_id`;
+  ALTER TABLE `customer_logs` CHANGE `created_at` `created_at` DATETIME NOT NULL;
+  
+  ALTER TABLE `customer_logs` ADD `comment_type` ENUM('ACTION_LOG','MISSED_CALL','NOT_INTERESTED','CALL_BACK','NOT_REACHABLE','NOT_PICKING_UP') NOT NULL AFTER `log_text`;
+	ALTER TABLE `customer_logs` ADD `reminder_date` DATE NOT NULL AFTER `comment_type`;
+	
+	ALTER TABLE `customer_logs` CHANGE `comment_type` `comment_type` ENUM('ACTION_LOG','MISSED_CALL','NOT_INTERESTED','CALL_BACK','NOT_REACHABLE','NOT_PICKING_UP','FOLLOW_UP') CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL;
+
+ALTER TABLE `customer_logs` CHANGE `updated_at` `updated_at` DATETIME NOT NULL;
+ALTER TABLE `customer_logs` CHANGE `reminder_date` `reminder_date` DATE NULL;
+
+
+
+
+ALTER TABLE `batches` ADD `lead_instructor` INT NOT NULL AFTER `end_date`, ADD `alternate_instructor` INT NOT NULL AFTER `lead_instructor`;
+ALTER TABLE `batches` CHANGE `lead_instructor` `lead_instructor` INT(11) UNSIGNED NOT NULL;
+ALTER TABLE `batches` CHANGE `alternate_instructor` `alternate_instructor` INT(11) UNSIGNED NOT NULL;
+ALTER TABLE `batches` ADD INDEX(`lead_instructor`);
+ALTER TABLE `batches` ADD INDEX(`alternate_instructor`);
+
+ALTER TABLE `batches` ADD CONSTRAINT `lead_instructor` FOREIGN KEY (`lead_instructor`) REFERENCES `users`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT; 
+ALTER TABLE `batches` ADD CONSTRAINT `alternate_instructor` FOREIGN KEY (`alternate_instructor`) REFERENCES  `users`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
+
+
+
+
+
+
+
+
+
+
+
+
+
+CREATE TABLE `payment_reminders` ( `id` INT NULL AUTO_INCREMENT , `customer_id` INT NOT NULL , `student_id` INT NOT NULL , 
+`enrolled_class_id` INT NOT NULL , `enrolled_batch_id` INT NOT NULL , `reminder_date` DATE NOT NULL , `created_by` INT NOT NULL , 
+`created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP , 
+`updated_by` INT NULL DEFAULT NULL , `updated_at` DATETIME NULL DEFAULT NULL , PRIMARY KEY (`id`)) ENGINE = InnoDB;
+
+ALTER TABLE `batches` CHANGE `lead_instructor` `lead_instructor` INT(11) UNSIGNED NULL DEFAULT NULL, CHANGE `alternate_instructor` `alternate_instructor` INT(11) UNSIGNED NULL DEFAULT NULL;
+
+

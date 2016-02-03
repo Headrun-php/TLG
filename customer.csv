@@ -1,0 +1,4 @@
+type,Customername ,email ,mobile,building/block,apartment,lane,locality,state,city,source,zipcode,refered,Student name,Nickname,school,location,hobbies(Separated by #),healthissue,emergency contact,remarks,gender(male/female),dateof birth(2005-04-15)
+parent,Nikhil,nikhil@gmail.com,324234121,no1,apartment,1st street,btm,19,113800,1,,Prakash,,,,,,,,,,
+student,,,,,,,,,,,,,Rajesh,Raj,ABC School,Bangalore,Playing#drawing,No issues,898989898,nothing,male,2005-05-19
+student,,,,,,,,,,,,,Nithila,Nithi,XYZ School,Bangalore,Drawing#Playing,No issues,898989898,nothing,female,2005-05-19

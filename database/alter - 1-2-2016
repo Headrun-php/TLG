@@ -1,0 +1,8 @@
+ALTER TABLE `payments_dues` ADD `payment_due_for` ENUM('membership','enrollment','birthday','') NOT NULL AFTER `payment_type`;
+ALTER TABLE `payments_dues` ADD `student_class_id` INT NOT NULL AFTER `class_id`;
+ALTER TABLE `payments_dues` CHANGE `student_class_id` `student_class_id` INT(11) NULL DEFAULT NULL;
+
+ALTER TABLE `payments_dues` ADD `selected_order_sessions` INT NULL AFTER `selected_sessions`;
+ALTER TABLE `payments_dues` ADD `start_order_date` DATE NULL AFTER `selected_order_sessions`, ADD `end_order_date` DATE NULL AFTER `start_order_date`;
+ALTER TABLE `payments_dues` ADD `discount_amount` INT NULL AFTER `discount_applied`;
+ALTER TABLE `payments_dues` CHANGE `discount_applied` `discount_applied` INT NOT NULL;

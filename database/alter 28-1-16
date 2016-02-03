@@ -1,0 +1,5 @@
+ALTER TABLE `payments_dues` CHANGE `batch_id` `batch_id` INT(10) UNSIGNED NULL;
+ALTER TABLE `payments_dues` CHANGE `class_id` `class_id` INT(11) NULL;
+ALTER TABLE `payments_dues` ADD `birthday_id` INT NULL AFTER `class_id`;
+ALTER TABLE `payments_dues` ADD INDEX(`birthday_id`);
+ALTER TABLE `orders` ADD `tax_amount` INT NULL AFTER `amount`;

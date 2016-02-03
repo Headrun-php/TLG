@@ -1,0 +1,6 @@
+
+ALTER TABLE `orders` ADD `birthday_id` INT NULL AFTER `student_classes_id`;
+
+ALTER TABLE `orders` ADD INDEX(`birthday_id`);
+
+ALTER TABLE `orders` ADD CONSTRAINT `birthday_id_fk` FOREIGN KEY (`birthday_id`) REFERENCES `birthday_parties`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
