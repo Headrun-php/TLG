@@ -1,5 +1,5 @@
 <?php
-
+use Carbon\Carbon;
 class CustomerMembership extends \Eloquent {
 	protected $fillable = [];
 	protected $table = 'customer_membership';
@@ -13,14 +13,20 @@ class CustomerMembership extends \Eloquent {
 	
 		return $this->belongsTo('MembershipTypes', 'membership_type_id');
 	}
-	
+        
 	static function addMembership($inputs){
-		
+                $present_date=Carbon::now();
 		$customerMembership = new CustomerMembership();
 		$customerMembership->customer_id        = $inputs['customer_id'];
 		$customerMembership->membership_type_id = $inputs['membership_type_id'];
 		$customerMembership->status             = "active";
-		$customerMembership->action             = "default";		
+		$customerMembership->action             = "default";
+                $customerMembership->membership_start_date=$present_date->toDateString();
+                if(isset($inputs['membership_type_id'])){
+                    $interval=  MembershipTypes::find($inputs['membership_type_id']);
+                    $present_date=$present_date->addYears($interval->year_interval);
+                    $customerMembership->membership_end_date=$present_date->toDateString();    
+                }
 		$customerMembership->created_by         = Session::get('userId');
 		$customerMembership->created_at         = date("Y-m-d H:i:s");
 		$customerMembership->save();
@@ -50,7 +56,8 @@ class CustomerMembership extends \Eloquent {
         static function getNonMembertodaysRegCount(){
                            $s=DB::table('customers')
                                 ->leftJoin('customer_membership', 'customer_id', '=', 'customers.id')        
-                                ->whereDate('customers.created_at', '=',  date("Y-m-d"))                                     
+                                ->whereDate('customers.created_at', '=',  date("Y-m-d"))     
+                                ->where('customers.franchisee_id','=',Session::get('franchiseId'))
                                 ->get();    
                             $i=0;
                             foreach ($s as $user)

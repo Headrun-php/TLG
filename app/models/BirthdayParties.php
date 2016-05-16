@@ -17,15 +17,14 @@ class BirthdayParties extends \Eloquent {
 	
 	static function addbirthdayParty($inputs){
 	
-		if($inputs['membershipType'] != "" && $inputs['membershipPriceBday'] !=0 ){
-			$membershipInput['customer_id']        = $inputs['customerId'];
-			$membershipInput['membership_type_id'] = $inputs['membershipType'];
-			CustomerMembership::addMembership($membershipInput);
-		}
+		
 	
 		$birthday = new BirthdayParties();
 		$birthday->customer_id                   = $inputs['customerId'];
 		$birthday->student_id                    = $inputs['kidsSelect'];
+                if(isset($inputs['defaultBirthdayPrice'])){
+                    $birthday->default_birthday_cost=$inputs['defaultBirthdayPrice'];
+                }
 		$birthday->additional_number_of_guests   = $inputs['additionalGuestCount'];
 		$birthday->additional_half_hours         = $inputs['additionalHalfHourCount'];
 		$birthday->additional_guest_price	 = $inputs['additionalGuestPrice'];

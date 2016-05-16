@@ -3,20 +3,13 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/C:/wamp/www/tlgnew/app/models/BirthdayParties.php</file>
-            <file>file:/C:/wamp/www/tlgnew/app/views/pages/orders/printorder.blade.php</file>
-            <file>file:/C:/wamp/www/tlgnew/app/routes.php</file>
-            <file>file:/C:/wamp/www/tlgnew/app/models/Classes.php</file>
+            <file>file:/C:/wamp/www/tlgnew/app/controllers/CoursesController.php</file>
             <file>file:/C:/wamp/www/tlgnew/app/controllers/CustomersController.php</file>
-            <file>file:/C:/wamp/www/tlgnew/app/models/Orders.php</file>
-            <file>file:/C:/wamp/www/tlgnew/app/models/BatchSchedule.php</file>
+            <file>file:/C:/wamp/www/tlgnew/app/controllers/SeasonsController.php</file>
             <file>file:/C:/wamp/www/tlgnew/app/views/pages/students/details.blade.php</file>
-            <file>file:/C:/wamp/www/tlgnew/app/views/pages/customers/details.blade.php</file>
             <file>file:/C:/wamp/www/tlgnew/app/controllers/StudentsController.php</file>
-            <file>file:/C:/wamp/www/tlgnew/app/controllers/BatchesController.php</file>
-            <file>file:/C:/wamp/www/tlgnew/app/models/Students.php</file>
-            <file>file:/C:/wamp/www/tlgnew/app/models/StudentClasses.php</file>
-            <file>file:/C:/wamp/www/tlgnew/app/models/PaymentDues.php</file>
+            <file>file:/C:/wamp/www/tlgnew/app/routes.php</file>
+            <file>file:/C:/wamp/www/tlgnew/app/views/layout/sidebar.blade.php</file>
         </group>
     </open-files>
 </project-private>

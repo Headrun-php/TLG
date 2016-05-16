@@ -2,6 +2,7 @@
 <link
 	href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css'
 	rel='stylesheet' />
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.2/css/font-awesome.min.css">
 <link rel="stylesheet"
 	href="{{url()}}/bower_components/kendo-ui/styles/kendo.common-material.min.css" />
 <link rel="stylesheet"
@@ -55,7 +56,36 @@ var isEligibleFifty = "{{$discountEligibility['eligibleForFifty']}}";
 
 var ageYear  = '<?php echo date_diff(date_create(date('Y-m-d',strtotime($student->student_date_of_birth))), date_create('today'))->y;?>';
 var ageMonth = '<?php echo date_diff(date_create(date('Y-m-d',strtotime($student->student_date_of_birth))), date_create('today'))->m;?>';
-getEligibleClasses()
+//getEligibleClasses()
+var selectedNoOfClass=0;
+var DiscountPercentage=0;
+var DiscountAmount=0;
+var selectedNoOfClass1=0;
+var selectedNoOfClass2=0;
+var selectedNoOfClass3=0;
+var firstselectedNoOfClass=0;
+var secondselectedNoOfClass=0;
+var thirdselectedNoOfClass=0;
+
+var estimate_master_no=0;
+var totalCostForpay;
+
+var batch1ClassCost=0;
+var batch2ClassCost=0;
+var batch3ClassCost=0;
+
+var enddate1='';
+var enddate2='';
+var enddate3='';
+
+var estimate_id1=0;
+var estimate_id2=0;
+var estimate_id3=0;
+
+// for payments
+
+var bipay=[];
+var multipay=[];
 
 $('#studentDob').kendoDatePicker();
 
@@ -71,7 +101,10 @@ $("#kidsAddForm").submit(function (event){
 	saveKids(event);
 });
 
-
+$("#OrderDate").kendoDateTimePicker();
+$("#OrderDate2").kendoDateTimePicker();
+$("#OrderDate3").kendoDateTimePicker();
+$("#OrderDate4").kendoDateTimePicker();
 $("#reminderTxtBox").kendoDatePicker();
 $("#introVisitTxtBox").kendoDatePicker({	
     change: function() {
@@ -83,7 +116,7 @@ $("#introVisitTxtBox").kendoDatePicker({
             dataType:"json",
             success: function (response)
             {
-          	  	console.log(response);      	 	
+          	  	//console.log(response);      	 	
     			if(response.status == "clear"){
     				$("#introVisitAddMessage").html('<p class="uk-alert uk-alert-danger">Please select another day. Batch chosen does not have schedule on selected date.</p>');
     				//$("#KidsformBody").hide();
@@ -124,7 +157,7 @@ function saveKids(event){
         dataType:"json",
         success: function (response)
         {
-      	  	console.log(response);      	 	
+      	  //	console.log(response);      	 	
 			if(response.status == "success"){
 				$("#messageStudentAddDiv").html('<p class="uk-alert uk-alert-success">Kid details has been updated successfully. Please wait till this page reloads</p>');
 				$("#KidsformBody").hide();
@@ -153,7 +186,7 @@ function getStudentDetails(){
         dataType:"json",
         success: function (response)
         {
-      	  	console.log(response);      	 	
+      	  	//console.log(response);      	 	
 	      	$('#studentName').val(response.student_name);
 	     	$('#nickname').val(response.nickname);
 	     	$('#studentDob').val(response.student_date_of_birth);
@@ -184,10 +217,35 @@ $("#addEnrollment").click(function(){
 		$('#errorModal').modal('show');
 
 	}else{
-		$("#enrollmentModal").modal('show');
+                if($('input[name="enrollmentClassesSelect"]').is(':checked')){
+                 if($("input[name='enrollmentClassesSelect']:checked").val()!='custom'){
+                    selectedNoOfClass=parseInt($("input[name='enrollmentClassesSelect']:checked").val());
+                    DiscountPercentage=parseFloat($("input[name='enrollmentClassesSelect']:checked").attr('discountpercentage'));
+                    var position=parseInt($("input[name='enrollmentClassesSelect']:checked").attr('position'));
+                    //DiscountAmount=parseInt($('#discountAmount'+position).val());
+                  }else{
+                    selectedNoOfClass=parseInt($('#customEnrollmemtNoofClass').val());
+                    DiscountPercentage=parseFloat($('#customEnrollmemtDiscountPercentage').val());
+                    //DiscountAmount=parseInt($('#customEnrollmemtDiscount').val());
+                  }
+                $('#enrollmentcontinue2').hide();
+                $('#enrollmentcontinue3').hide();
+             
+                $('#enrollmentMsg').html("");
+		//$("#enrollmentModal").modal('show');
+                $("#enrollmentModal").modal({
+                    backdrop: 'static',
+                    keyboard: false 
+                });
+                
 		$("#formBody").show();
 		$("#messageStudentEnrollmentDiv").html("");
-		getEligibleClasses();
+		getSeasons();
+                getEligibleClasses();
+                }else{
+                    $('#enrollmentMsg').html("<p class='uk-alert uk-alert-danger'>please select the Number of Classes </p>");
+                }
+               
 
 	}
 });
@@ -199,22 +257,488 @@ $("#biPayAmountDiv").hide();
 $("#singlePayDiv").hide();
 $("#bipayDiv").hide();
 $("#multipayDiv").hide();
+
 $("#enrollmentOptions").click(function (){
-
+                $('#enrollNow').addClass('disabled');
 	//if($("#enrollmentOptions").val() == "enrollandpay" ){
+                if((firstselectedNoOfClass+secondselectedNoOfClass+thirdselectedNoOfClass)===selectedNoOfClass){
+		$("#selectedSessions").val(selectedNoOfClass);
+                
+                
+                // working out for singlepay
+                 
+                 
+                totalCostForpay=(firstselectedNoOfClass*batch1ClassCost)+(secondselectedNoOfClass*batch2ClassCost)+(thirdselectedNoOfClass*batch3ClassCost);
+                //console.log(totalCostForpay);
+                $("#singlePayDiv").show();
+                $("#singlePayAmount").val(totalCostForpay);
+                $("#singlePayAmountDiv").show();
+                $("#paymentType").show();
+                $("#paymentOptions").show(); 
+            
+                // working out for bipay
+                
+                if(selectedNoOfClass > 5){
+                    var totalCostForBipay=totalCostForpay;
+                    var totalnoofclasses=firstselectedNoOfClass+secondselectedNoOfClass+thirdselectedNoOfClass;
+                    //** working out for Even or odd Number of classes **//
+                    if(totalnoofclasses%2==0){
+                        var firstInstallmentsessionNo=totalnoofclasses/2;
+                        var secondInstallmentsessionNo=totalnoofclasses/2;
+                    }else if(totalnoofclasses%2!=0){
+                        var firstInstallmentsessionNo=parseInt(totalnoofclasses/2);
+                        var secondInstallmentsessionNo=parseInt(totalnoofclasses/2)+1;
+                        
+                    }
+                    //** working out for different seasons and for diffrent cases **//
+                    if(firstselectedNoOfClass!=0 &&secondselectedNoOfClass==0 && thirdselectedNoOfClass==0){
+                            //** working out for 1 batch **//
+                            bipay[1]=firstInstallmentsessionNo*batch1ClassCost;
+                            bipay[2]=secondInstallmentsessionNo*batch1ClassCost;
+                            
+                        }else if(firstselectedNoOfClass!=0 && secondselectedNoOfClass!=0 && thirdselectedNoOfClass==0){
+                            //**  working out for 2 batches**//
+                            if(firstselectedNoOfClass==firstInstallmentsessionNo){
+                                bipay[1]=firstInstallmentsessionNo*batch1ClassCost;
+                                bipay[2]=secondInstallmentsessionNo*batch2ClassCost;
+                            }else if(firstselectedNoOfClass<firstInstallmentsessionNo ){
+                                bipay[1]=(firstselectedNoOfClass*batch1ClassCost)+((firstInstallmentsessionNo-firstselectedNoOfClass)*batch2ClassCost);
+                                bipay[2]=secondInstallmentsessionNo*batch2ClassCost;
+                            }else if(firstselectedNoOfClass>firstInstallmentsessionNo){
+                                bipay[1]=(firstInstallmentsessionNo*batch1ClassCost);
+                                bipay[2]=secondselectedNoOfClass*batch2ClassCost+((firstselectedNoOfClass-firstInstallmentsessionNo)*batch1ClassCost);
+                            }
+                            $("input[name='bipaybatch1availablesession']").val(firstselectedNoOfClass);
+                            $("input[name='bipaybatch2availablesession']").val(secondselectedNoOfClass);
+                    
+                        }else if(firstselectedNoOfClass!=0 && secondselectedNoOfClass!=0 && thirdselectedNoOfClass!=0){
+                            //** working out for 3 batches **//
+                            if(firstselectedNoOfClass < firstInstallmentsessionNo){
+                                 // ** checking B1 + B2 lies in first Installment **//
+                                 if((firstselectedNoOfClass+secondselectedNoOfClass)==firstInstallmentsessionNo){
+                                     bipay[1]=(firstselectedNoOfClass*batch1ClassCost)+(secondselectedNoOfClass*batch2ClassCost);
+                                     bipay[2]=(thirdselectedNoOfClass*batch3ClassCost);
+                                 }else
+                                 // ** checking B1 + B2 lies in second Installment **//
+                                 if((firstselectedNoOfClass+secondselectedNoOfClass)>firstInstallmentsessionNo){
+                                     bipay[1]=((firstselectedNoOfClass*batch1ClassCost)+((firstInstallmentsessionNo-firstselectedNoOfClass)*batch2ClassCost));
+                                     bipay[2]=((secondInstallmentsessionNo-thirdselectedNoOfClass)*batch2ClassCost)+(thirdselectedNoOfClass*batch3ClassCost);       
+                                 }else
+                                 // ** checking B1 + B2 lies in first Installment **//
+                                 if((firstselectedNoOfClass+secondselectedNoOfClass)<firstInstallmentsessionNo){
+                                     bipay[1]=(firstselectedNoOfClass*batch1ClassCost)+(secondselectedNoOfClass*batch2ClassCost)+((firstInstallmentsessionNo-(firstselectedNoOfClass+secondselectedNoOfClass))*batch3ClassCost);
+                                     bipay[2]=(secondInstallmentsessionNo*batch3ClassCost);
+                                }
+                            
+                            }else if(firstselectedNoOfClass > firstInstallmentsessionNo){
+                                //** if B1 > first installment and B2 and B3 lies in  2nd installment **//
+                                  bipay[1]=firstInstallmentsessionNo*batch1ClassCost;
+                                  bipay[2]=(secondselectedNoOfClass*batch2ClassCost)+(thirdselectedNoOfClass*batch3ClassCost)+((secondInstallmentsessionNo-(secondselectedNoOfClass+thirdselectedNoOfClass))*batch1ClassCost);
+                                                                   
+                            }else if((firstselectedNoOfClass)==firstInstallmentsessionNo){
+                                //** if B1==first installment and B2 and B3 lies in  2nd installment **//
+                                bipay[1]=(firstselectedNoOfClass*batch1ClassCost);
+                                bipay[2]=(secondselectedNoOfClass*batch2ClassCost)+(thirdselectedNoOfClass*batch3ClassCost);
+                            }
+                                $("input[name='bipaybatch1availablesession']").val(firstselectedNoOfClass);
+                                $("input[name='bipaybatch2availablesession']").val(secondselectedNoOfClass);
+                                $("input[name='bipaybatch3availablesession']").val(thirdselectedNoOfClass);
+                        }
+                    
+                   /*     
+                    if(totalCostForBipay%2===0){
+                        bipay[1]=totalCostForBipay/2;
+                        bipay[2]=totalCostForBipay/2;
+                    }else{
+                        bipay[1]=parseInt(totalCostForBipay/2);
+                        bipay[2]=(parseInt(totalCostForBipay/2))+1;
+                    }
+                    */
+                    $("#biPayAmountDiv").show();
+                    $("#bipayDiv").show();
+                    $("#bipayDivInputs").empty();
+                    var bipaystring = "";
+                    
+                    for(var i=1;i<bipay.length;i++){
+                        bipaystring += '<input id="bipayAmount'+i+'" name="bipayAmount'+i+'" readonly value="'+bipay[i]+'" style="float:left;width:60px;" class="form-control input-sm md-input"/>';
+                    }
+                    //console.log(bipaystring);
+                    $("#bipayDivInputs").append(bipaystring);
+		    $("#biPayRadio").prop('disabled',false);
+		    $("#biPayRadio").removeClass('disabled');
+		    $("#biPayRadiolabel").removeClass('disabled');
+                    
+                    
+                }else{
 
-		$("#selectedSessions").val(availableSessionCount);
+					$("#biPayAmountDiv").show();
+					
+					$("#bipayDiv").show();
+					$("#bipayDivInputs").empty();
+
+					//singlePayRadio biPayRadio multiPayRadio
+					
+					$("#biPayRadio").attr('disabled','true');
+					$("#biPayRadio").addClass('disabled');
+					$("#biPayRadiolabel").addClass('disabled');
+		}
+                //console.log(bipay);
+                
+                // working for multipay
+                //
+                
+                if(selectedNoOfClass > 20){
+                $("#multipayDiv").show();
+                $("#multipayDivInputs").empty();
+                var round=0;
+                var modulus=0;
+                var multipayamt={};
+                var firstselectedNoOfClassCost=0;
+                if(selectedNoOfClass==40){
+                    multipay[0]=10;
+                    multipay[1]=10;
+                    multipay[2]=10;
+                    multipay[3]=10;
+                    
+                    
+                }else if(selectedNoOfClass > 30 && selectedNoOfClass < 40 ){
+                    modulus=selectedNoOfClass%30;
+                    multipay[0]=modulus;
+                    multipay[1]=10;
+                    multipay[2]=10;
+                    multipay[3]=10;
+                }else if(selectedNoOfClass > 20 && selectedNoOfClass < 30){
+                    modulus=selectedNoOfClass%20;
+                    multipay[0]=modulus;
+                    multipay[1]=10;
+                    multipay[2]=10;
+                }else if(selectedNoOfClass == 30 ){
+                    multipay[0]=10;
+                    multipay[1]=10;
+                    multipay[2]=10;
+                }
+                
+                    if(firstselectedNoOfClass== 40 && secondselectedNoOfClass==0 && thirdselectedNoOfClass==0){
+                        //** working for only 1 batch **//
+                        multipayamt[0]=multipay[0]*batch1ClassCost;
+                        multipayamt[1]=multipay[1]*batch1ClassCost;
+                        multipayamt[2]=multipay[2]*batch1ClassCost;
+                        multipayamt[3]=multipay[3]*batch1ClassCost;
+                        
+                    }else if(firstselectedNoOfClass!=0 && secondselectedNoOfClass==0 && thirdselectedNoOfClass==0){
+                        //**working out for 1 batch **//
+                        multipayamt[0]=multipay[0]*batch1ClassCost;
+                        multipayamt[1]=multipay[1]*batch1ClassCost;
+                        multipayamt[2]=multipay[2]*batch1ClassCost;
+                        if(typeof multipay[3]!=='undefined'){
+                                 multipayamt[3]=multipay[3]*batch1ClassCost;
+                        }
+                        
+                    }else if(secondselectedNoOfClass!=0 && firstselectedNoOfClass!=0 && thirdselectedNoOfClass==0){
+                        //** working for 2 batches **//
+                        var totalClassesSelected=firstselectedNoOfClass+secondselectedNoOfClass;
+                        if(firstselectedNoOfClass < multipay[0]){
+                            //** batch change lies in first multipay **//
+                            firstselectedNoOfClassCost=firstselectedNoOfClass*batch1ClassCost;
+                            multipayamt[0]=(multipay[0]-firstselectedNoOfClass)*batch2ClassCost;
+                            multipayamt[0]=multipayamt[0]+firstselectedNoOfClassCost;
+                            multipayamt[1]=multipay[1]*batch2ClassCost;
+                            multipayamt[2]=multipay[2]*batch2ClassCost;
+                            if(typeof multipay[3]!=='undefined'){
+                                 multipayamt[3]=multipay[3]*batch2ClassCost;
+                            }
+                        }else if(firstselectedNoOfClass > multipay[0] &&  firstselectedNoOfClass < (multipay[0]+multipay[1]) ){
+                            var temp=firstselectedNoOfClass;
+                            temp=temp-multipay[0];
+                            firstselectedNoOfClassCost=temp*batch1ClassCost;
+                            multipayamt[0]=multipay[0]*batch1ClassCost;
+                            multipayamt[1]=((multipay[1]-temp)*batch2ClassCost)+firstselectedNoOfClassCost;
+                            multipayamt[2]=multipay[2]*batch2ClassCost;
+                            if(typeof multipay[3]!=='undefined'){
+                            multipayamt[3]=multipay[3]*batch2ClassCost;
+                            }
+                        }else if(firstselectedNoOfClass > (multipay[0]+multipay[1]) && firstselectedNoOfClass < (multipay[0]+multipay[1]+multipay[2])){
+                            var temp=firstselectedNoOfClass;
+                            temp=temp-(multipay[0]+multipay[1]);
+                            firstselectedNoOfClassCost=temp*batch1ClassCost;
+                            multipayamt[0]=multipay[0]*batch1ClassCost;
+                            multipayamt[1]=multipay[1]*batch1ClassCost;
+                            multipayamt[2]=((multipay[2]-temp)*batch2ClassCost)+firstselectedNoOfClassCost;
+                            if(typeof multipay[3]!=='undefined'){
+                            multipayamt[3]=multipay[3]*batch2ClassCost;
+                            }
+                        }else if(firstselectedNoOfClass > (multipay[0]+multipay[1]+multipay[2]) && firstselectedNoOfClass < (multipay[0]+multipay[1]+multipay[2]+multipay[3]) ){
+                            var temp =firstselectedNoOfClass;
+                            temp=temp-(multipay[0]+multipay[1]+multipay[2]); 
+                            firstselectedNoOfClassCost=temp*batch1ClassCost;
+                            multipayamt[0]=multipay[0]*batch1ClassCost;
+                            multipayamt[1]=multipay[1]*batch1ClassCost;
+                            multipayamt[2]=multipay[2]*batch1ClassCost;
+                            multipayamt[3]=firstselectedNoOfClassCost+((multipay[3]-temp)*batch2ClassCost);
+                        }else if(firstselectedNoOfClass==multipay[0]){
+                            //** when b1 == pay1 **//
+                            multipayamt[0]=multipay[0]*batch1ClassCost;
+                            multipayamt[1]=multipay[1]*batch2ClassCost;
+                            multipayamt[2]=multipay[2]*batch2ClassCost;
+                            if(typeof multipay[3]!=='undefined'){
+                                 multipayamt[3]=multipay[3]*batch2ClassCost;
+                            }
+                        }else if((firstselectedNoOfClass)==(multipay[0]+multipay[1])){
+                            //** when b1=pay1+pay2 **//
+                           
+                            multipayamt[0]=multipay[0]*batch1ClassCost;
+                            multipayamt[1]=multipay[1]*batch1ClassCost;
+                            multipayamt[2]=multipay[2]*batch2ClassCost;
+                            if(typeof multipay[3]!=='undefined'){
+                                 multipayamt[3]=multipay[3]*batch2ClassCost;
+                            }
+                        }else if(firstselectedNoOfClass==(multipay[0]+multipay[1]+multipay[2])){
+                            //** when b1=pay1+pay2+pay3 **//
+                            multipayamt[0]=multipay[0]*batch1ClassCost;
+                            multipayamt[1]=multipay[1]*batch1ClassCost;
+                            multipayamt[2]=multipay[2]*batch1ClassCost;
+                            if(typeof multipay[3]!=='undefined'){
+                                 multipayamt[3]=multipay[3]*batch2ClassCost;
+                            }
+                        }
+                        
+                        
+                    }else if(secondselectedNoOfClass!=0 && firstselectedNoOfClass!=0 && thirdselectedNoOfClass!=0){
+                        //** working out for 3 batches **//
+                        var totalClassesSelected=firstselectedNoOfClass+secondselectedNoOfClass+thirdselectedNoOfClass;
+                        if(firstselectedNoOfClass < multipay[0]){
+                            if((firstselectedNoOfClass+secondselectedNoOfClass) < multipay[0]){
+                                //** working on first batch change lies in first payment **//
+                                var thirdbatchFirstpaymentAmount=(multipay[0]-(firstselectedNoOfClass+secondselectedNoOfClass))*batch3ClassCost;
+                                multipayamt[0]=(firstselectedNoOfClass*batch1ClassCost)+(secondselectedNoOfClass*batch2ClassCost)+thirdbatchFirstpaymentAmount;
+                                multipayamt[1]=multipay[1]*batch3ClassCost;
+                                multipayamt[2]=multipay[2]*batch3ClassCost;
+                                if(typeof multipay[3]!=='undefined'){
+                                    multipayamt[3]=multipay[3]*batch3ClassCost;
+                                }
+                            }else if((firstselectedNoOfClass+secondselectedNoOfClass)== multipay[0]){
+                                //** working on firstbatch+secondbatch=firstmultipay *//
+                                multipayamt[0]=(firstselectedNoOfClass*batch1ClassCost)+(secondselectedNoOfClass*batch2ClassCost);
+                                multipayamt[1]=multipay[1]*batch3ClassCost;
+                                multipayamt[2]=multipay[2]*batch3ClassCost;
+                                if(typeof multipay[3]!=='undefined'){
+                                    multipayamt[3]=multipay[3]*batch3ClassCost;
+                                }
+                            }else if((firstselectedNoOfClass+secondselectedNoOfClass) < (multipay[0]+multipay[1])){
+                                //** working on firstbatch+secondbatch < 2nd multipay **//
+                                multipayamt[0]=(firstselectedNoOfClass*batch1ClassCost)+((multipay[0]-firstselectedNoOfClass)*batch2ClassCost);
+                                multipayamt[1]=((secondselectedNoOfClass-(multipay[0]-firstselectedNoOfClass))*batch2ClassCost)+((multipay[1]-(secondselectedNoOfClass-(multipay[0]-firstselectedNoOfClass)))*batch3ClassCost);
+                                multipayamt[2]=multipay[2]*batch3ClassCost;
+                                if(typeof multipay[3]!=='undefined'){
+                                    multipayamt[3]=multipay[3]*batch3ClassCost;
+                                }
+                            }else if((firstselectedNoOfClass+secondselectedNoOfClass)== (multipay[0]+multipay[1])){
+                                //** working on firstbatch+secondbatch == 2nd multipay **//
+                                multipayamt[0]=(firstselectedNoOfClass*batch1ClassCost)+((multipay[0]-firstselectedNoOfClass)*batch2ClassCost);
+                                multipayamt[1]=multipay[1]*batch2ClassCost;
+                                multipayamt[2]=multipay[2]*batch3ClassCost;
+                                if(typeof multipay[3]!=='undefined'){
+                                    multipayamt[3]=multipay[3]*batch3ClassCost;
+                                }
+                            }else if((firstselectedNoOfClass+secondselectedNoOfClass) < (multipay[0]+multipay[1]+multipay[2])){
+                                //** working on firstbatch+secondbatch < 3nd multipay **//
+                                multipayamt[0]=(firstselectedNoOfClass*batch1ClassCost)+((multipay[0]-firstselectedNoOfClass)*batch2ClassCost);
+                                multipayamt[1]=multipay[1]*batch2ClassCost;
+                                multipayamt[2]=(((firstselectedNoOfClass+secondselectedNoOfClass)-(multipay[0]+multipay[1]))*batch2ClassCost)+((multipay[2]-((firstselectedNoOfClass+secondselectedNoOfClass)-(multipay[0]+multipay[1])))*batch3ClassCost);
+                                if(typeof multipay[3]!=='undefined'){
+                                    multipayamt[3]=multipay[3]*batch3ClassCost;
+                                }
+                            }else if((firstselectedNoOfClass+secondselectedNoOfClass) == (multipay[0]+multipay[1]+multipay[2])){
+                                //** working on firstbatch+secondbatch = 3nd multipay **//
+                                multipayamt[0]=(firstselectedNoOfClass*batch1ClassCost)+((multipay[0]-firstselectedNoOfClass)*batch2ClassCost);
+                                multipayamt[1]=multipay[1]*batch2ClassCost;
+                                multipayamt[2]=multipay[2]*batch2ClassCost;
+                                 if(typeof multipay[3]!=='undefined'){
+                                     multipayamt[3]=multipay[3]*batch3ClassCost;
+                                 } 
+                            }else if((firstselectedNoOfClass+secondselectedNoOfClass)<(multipay[0]+multipay[1]+multipay[2]+multipay[3])){
+                                //** working on firstbatch+secondbatch < 4th multipay **//
+                                multipayamt[0]=(firstselectedNoOfClass*batch1ClassCost)+((multipay[0]-firstselectedNoOfClass)*batch2ClassCost);
+                                multipayamt[1]=multipay[1]*batch2ClassCost;
+                                multipayamt[2]=multipay[2]*batch2ClassCost;
+                                if(typeof multipay[3]!=='undefined'){
+                                     multipayamt[3]=((multipay[3]-thirdselectedNoOfClass)*batch2ClassCost)+(thirdselectedNoOfClass*batch3ClassCost);
+                                }
+                            } 
+                        }else if(firstselectedNoOfClass == multipay[0]){
+                                    //** first batch== multipay1**//
+                            if((firstselectedNoOfClass+secondselectedNoOfClass) < (multipay[0]+multipay[1])){
+                                //** first batch change lies in 2nd pay **//
+                                multipayamt[0]=multipay[0]*batch1ClassCost;
+                                multipayamt[1]=(secondselectedNoOfClass*batch2ClassCost)+((multipay[1]-secondselectedNoOfClass)*batch3ClassCost);
+                                multipayamt[2]=multipay[2]*batch3ClassCost;
+                                if(typeof multipay[3]!=='undefined'){
+                                     multipayamt[3]=(multipay[3]*batch3ClassCost);
+                                }
+                            }else if((firstselectedNoOfClass+secondselectedNoOfClass)==(multipay[0]+multipay[1])){
+                                //** first batch+ sec batch == 1stpay+2nd pay **//
+                                multipayamt[0]=multipay[0]*batch1ClassCost;
+                                multipayamt[1]=multipay[1]*batch2ClassCost;
+                                multipayamt[2]=multipay[2]*batch3ClassCost;
+                                if(typeof multipay[3]!=='undefined'){
+                                     multipayamt[3]=(multipay[3]*batch3ClassCost);
+                                }
+                            }else if((firstselectedNoOfClass+secondselectedNoOfClass) < (multipay[0]+multipay[1]+multipay[2])){
+                                //** first batch+sec batch < 1+2+3 payments change lies in 3rd pay **//
+                                multipayamt[0]=multipay[0]*batch1ClassCost;
+                                multipayamt[1]=multipay[1]*batch2ClassCost;
+                                multipayamt[2]=((secondselectedNoOfClass-multipay[1])*batch2ClassCost)+((multipay[2]-(secondselectedNoOfClass-multipay[1]))*batch3ClassCost);
+                                if(typeof multipay[3]!=='undefined'){
+                                     multipayamt[3]=(multipay[3]*batch3ClassCost);
+                                }
+                            }else if((firstselectedNoOfClass+secondselectedNoOfClass)==(multipay[0]+multipay[1]+multipay[2])){
+                                //** first batch + sec btach == 1st+2nd+3rd pay **//
+                                multipayamt[0]=multipay[0]*batch1ClassCost;
+                                multipayamt[1]=multipay[1]*batch2ClassCost;
+                                multipayamt[2]=multipay[2]*batch2ClassCost;
+                                if(typeof multipay[3]!=='undefined'){
+                                     multipayamt[3]=(multipay[3]*batch3ClassCost);
+                                }
+                            }else if((firstselectedNoOfClass+secondselectedNoOfClass)<(multipay[0]+multipay[1]+multipay[2]+multipay[3])){
+                                //** first batch+sec batch  3rd pay **//
+                                multipayamt[0]=multipay[0]*batch1ClassCost;
+                                multipayamt[1]=multipay[1]*batch2ClassCost;
+                                multipayamt[2]=multipay[2]*batch2ClassCost;
+                                 if(typeof multipay[3]!=='undefined'){
+                                     multipayamt[3]=((secondselectedNoOfClass-(multipay[1]+multipay[2]))*batch2ClassCost)+(thirdselectedNoOfClass*batch3ClassCost);
+                                }
+                            }
+                        }else if(firstselectedNoOfClass > multipay[0] && firstselectedNoOfClass <  (multipay[0]+multipay[1])){
+                            if((firstselectedNoOfClass+secondselectedNoOfClass) < (multipay[0]+multipay[1]) ){
+                                multipayamt[0]=multipay[0]*batch1ClassCost;
+                                multipayamt[1]=(secondselectedNoOfClass*batch2ClassCost)+((firstselectedNoOfClass-multipay[0])*batch1ClassCost);
+                                multipayamt[2]=(multipay[1]-((firstselectedNoOfClass-multipay[0])+secondselectedNoOfClass))*batch3ClassCost;
+                                if(typeof multipay[3]!=='undefined'){
+                                 multipayamt[3]=(multipay[3]*batch3ClassCost);
+                                }
+                            }else if((firstselectedNoOfClass+secondselectedNoOfClass)==(multipay[0]+multipay[1])){
+                                multipayamt[0]=multipay[0]*batch1ClassCost;
+                                multipayamt[1]=(secondselectedNoOfClass*batch2ClassCost)+((multipay[1]-secondselectedNoOfClass)*batch1ClassCost);
+                                multipayamt[2]=multipay[2]*batch3ClassCost;
+                                if(typeof multipay[3]!=='undefined'){
+                                 multipayamt[3]=(multipay[3]*batch3ClassCost);
+                                }
+                            }else if((firstselectedNoOfClass+secondselectedNoOfClass) < (multipay[0]+multipay[1]+multipay[2])){
+                                multipayamt[0]=multipay[0]*batch1ClassCost;
+                                multipayamt[1]=(secondselectedNoOfClass-multipay[0])*batch1ClassCost+((multipay[1]-(secondselectedNoOfClass-multipay[0]))*batch2ClassCost);
+                                multipayamt[2]=((thirdselectedNoOfClass-multipay[3])*batch3ClassCost)+(multipay[2]-(thirdselectedNoOfClass-multipay[3])*batch2ClassCost);
+                                if(typeof multipay[3]!=='undefined'){
+                                 multipayamt[3]=(multipay[3]*batch3ClassCost);
+                                }
+                            }else if((firstselectedNoOfClass+secondselectedNoOfClass) == (multipay[0]+multipay[1]+multipay[2])){
+                                multipayamt[0]=multipay[0]*batch1ClassCost;
+                                multipayamt[1]=((firstselectedNoOfClass-multipay[0])*batch1ClassCost)+((secondselectedNoOfClass-multipay[2])*batch2ClassCost);
+                                multipayamt[2]=multipay[2]*batch2ClassCost;
+                                if(typeof multipay[3]!=='undefined'){
+                                  multipayamt[3]=multipay[3]*batch3ClassCost;
+                                }
+                            }else if((firstselectedNoOfClass+secondselectedNoOfClass) < (multipay[0]+multipay[1]+multipay[2]+multipay[3])){
+                                multipayamt[0]=multipay[0]*batch1ClassCost;
+                                multipayamt[1]=((firstselectedNoOfClass-multipay[0])*batch1ClassCost)+(((multipay[1]+multipay[0])-firstselectedNoOfClass)*batch2ClassCost);
+                                multipayamt[2]=multipay[2]*batch2ClassCost;
+                                if(typeof multipay[3]!=='undefined'){
+                                multipayamt[3]=((multipay[3]-thirdselectedNoOfClass)*batch2ClassCost)+((multipay[3]-(multipay[3]-thirdselectedNoOfClass))*batch3ClassCost);
+                                }
+                            }   
+                        }else if(firstselectedNoOfClass == (multipay[0]+multipay[1])){
+                            if((firstselectedNoOfClass+secondselectedNoOfClass) < (multipay[0]+multipay[1]+multipay[2])){
+                                multipayamt[0]=multipay[0]*batch1ClassCost;
+                                multipayamt[1]=multipay[1]*batch1ClassCost;
+                                multipayamt[2]=(secondselectedNoOfClass*batch2ClassCost)+((multipay[2]-secondselectedNoOfClass)*batch3ClassCost);
+                                if(typeof multipay[3]!=='undefined'){
+                                    multipayamt[3]=multipay[3]*batch3ClassCost;
+                                }
+                            }else if((firstselectedNoOfClass+secondselectedNoOfClass)==(multipay[0]+multipay[1]+multipay[2])){
+                                multipayamt[0]=multipay[0]*batch1ClassCost;
+                                multipayamt[1]=multipay[1]*batch1ClassCost;
+                                multipayamt[2]=multipay[2]*batch2ClassCost;
+                                if(typeof multipay[3]!=='undefined'){
+                                    multipayamt[3]=multipay[3]*batch3ClassCost;
+                                }
+                            }else if((firstselectedNoOfClass+secondselectedNoOfClass) > (multipay[0]+multipay[1]+multipay[2])){
+                                multipayamt[0]=multipay[0]*batch1ClassCost;
+                                multipayamt[1]=multipay[1]*batch1ClassCost;
+                                multipayamt[2]=multipay[2]*batch2ClassCost;
+                                if(typeof multipay[3]!=='undefined'){
+                                    multipayamt[3]=((multipay[3]-thirdselectedNoOfClass)*batch2ClassCost)+(thirdselectedNoOfClass*batch3ClassCost);
+                                }
+                            }
+                        }else if(firstselectedNoOfClass == (multipay[0]+multipay[1]+multipay[2])){
+                            if((firstselectedNoOfClass+secondselectedNoOfClass) > (multipay[0]+multipay[1]+multipay[2])){
+                                multipayamt[0]=multipay[0]*batch1ClassCost;
+                                multipayamt[1]=multipay[1]*batch1ClassCost;
+                                multipayamt[2]=multipay[2]*batch1ClassCost;
+                                if(typeof multipay[3]!=='undefined'){
+                                    multipayamt[3]=((secondselectedNoOfClass)*batch2ClassCost)+(thirdselectedNoOfClass*batch3ClassCost);
+                                }
+                            }
+                        }
+                        
+                    }
+                
+                
+                
+                
+                var multipaystring = "";
+                for(var i=0;i<multipay.length;i++){
+                    multipaystring += '<input id="multipayAmount'+(i+1)+'" name="multipayAmount'+multipay[i]+'" readonly value="'+multipayamt[i]+'"  style="float:left;width:60px;" class="form-control input-sm md-input"/>';
+                }
+                //console.log(multipaystring);
+                
+                /*
+					var m = 1;
+					
+					$.each(payments.multipay.pays, function (index, item) {
+						if(item.amount != "undefined"){
+						 multipaystring += '<input id="multipayAmount'+m+'" name="multipayAmount'+m+'" readonly value="'+item.amount+'"  style="float:left;width:60px;" class="form-control input-sm md-input"/>'; 
+						 m++;             
+						}
+		            });
+                    */
+					$("#multipayDivInputs").append(multipaystring);
+					$("#multiPayRadio").prop('disabled',false);
+					$("#multiPayRadio").removeClass('disabled');
+					$("#multiPayRadiolabel").removeClass('disabled');
+                }else{
+                                        
+					$("#multipayDiv").show();
+					$("#multipayDivInputs").empty();
+					$("#multiPayRadio").attr('disabled','true');
+					$("#multiPayRadio").addClass('disabled');
+					$("#multiPayRadiolabel").addClass('disabled');
+                }
+
+
+
+                
+                
+                $('#enrollNow').addClass('disabled');
+                
+
+
+					
+					
+					
+				
+                
+                
+                /*
 		$.ajax({
 	        type: "POST",
 	        url: "{{URL::to('/quick/getPaymentTypes')}}",
-	        data: {'availableSession': availableSessionCount},
+	        data: {'availableSession': selectedNoOfClass,'batchId':$('#batchCbx').val(),},
 	        dataType:"json",
 	        success: function (response)
 	        {
-	      		console.log(response);
+	      		//console.log(response);
 				var payments = response.payments;
 
-				console.log(payments.multipay.eligible);
+				//console.log(payments.multipay.eligible);
 
 				$("#singlePayDiv").show();
 				$("#singlePayAmount").val(response.payments.singlepay);
@@ -222,7 +746,9 @@ $("#enrollmentOptions").click(function (){
 
 				
 				$("#paymentType").show();
-				$("#paymentOptions").show();
+				$("#paymentOptions").show(); 
+             */
+                                /*
 				if(payments.bipay.eligible == "YES"){
 
 
@@ -238,7 +764,7 @@ $("#enrollmentOptions").click(function (){
 			      		  bipaystring += '<input id="bipayAmount'+i+'" name="bipayAmount'+i+'" readonly value="'+item.amount+'" style="float:left;width:60px;" class="form-control input-sm md-input"/>';   
 			      		  i++;     
 						}       
-		            });
+		                        });
 					$("#bipayDivInputs").append(bipaystring);
 					$("#biPayRadio").prop('disabled',false)
 					$("#biPayRadio").removeClass('disabled')
@@ -257,6 +783,43 @@ $("#enrollmentOptions").click(function (){
 					$("#biPayRadio").addClass('disabled')
 					$("#biPayRadiolabel").addClass('disabled')
 				}
+                                */
+                /*                
+                                if(payments.modifiedbipay.elligible == "YES"){
+
+
+					$("#biPayAmountDiv").show();
+					
+					$("#bipayDiv").show();
+					$("#bipayDivInputs").empty();
+					var bipaystring = "";
+					var i = 1;
+					$.each(payments.modifiedbipay.pays, function (index, item) {
+
+						if(item.amount != "undefined"){
+			      		  bipaystring += '<input id="bipayAmount'+i+'" name="bipayAmount'+i+'" readonly value="'+item.amount+'" style="float:left;width:60px;" class="form-control input-sm md-input"/>';   
+			      		  i++;     
+						}       
+		                        });
+					$("#bipayDivInputs").append(bipaystring);
+					$("#biPayRadio").prop('disabled',false)
+					$("#biPayRadio").removeClass('disabled')
+					$("#biPayRadiolabel").removeClass('disabled')
+
+				}else{
+
+					$("#biPayAmountDiv").show();
+					
+					$("#bipayDiv").show();
+					$("#bipayDivInputs").empty();
+
+					//singlePayRadio biPayRadio multiPayRadio
+					
+					$("#biPayRadio").attr('disabled','true')
+					$("#biPayRadio").addClass('disabled')
+					$("#biPayRadiolabel").addClass('disabled')
+				}
+
 
 				
 				if(payments.multipay.eligible === "YES"){
@@ -285,11 +848,13 @@ $("#enrollmentOptions").click(function (){
 					$("#multiPayRadio").addClass('disabled');
 					$("#multiPayRadiolabel").addClass('disabled');
 				}
-	      		
+                                
+	      	    $('#enrollNow').addClass('disabled');	
 	        }
+                
 	    });
 
-
+*/
 
 
 
@@ -306,12 +871,18 @@ $("#enrollmentOptions").click(function (){
 
 		
 		
-	//}
+	}
 	
 });
 
 $("#cardDetailsDiv").hide();
 $("#chequeDetailsDiv").hide();
+$('#cardDetailsDiv2').hide();
+$('#chequeDetailsDiv2').hide();
+$('#cardDetailsDiv3').hide();
+$('#chequeDetailsDiv3').hide();
+$('#cardDetailsDiv4').hide();
+$('#chequeDetailsDiv4').hide();
 $("input[name='paymentTypeRadio']").change(function (){
 
 	var selectedPaymentType = $("input[type='radio'][name='paymentTypeRadio']:checked").val();
@@ -367,18 +938,18 @@ $("#finalPaymentDiv").hide();
 
 $("input[name='paymentOptionsRadio']").change(function (){
 
-	console.log("payment types");
+	//console.log("payment types");
 	$("#finalPaymentDiv").show();
 
 	var selected = $("input[type='radio'][name='paymentOptionsRadio']:checked").val();
 	
 	if(selected == "singlepay"){
-		console.log(availableSessionCount);
+		//console.log(availableSessionCount);
 		
 		$("#singlePayAmountDiv").show();
-		$("#singlePayAmount").val((availableSessionCount*500));
-		$("#totalAmountToPay").val(availableSessionCount*500);
-		$("#totalAmountToPaytotals").val(availableSessionCount*500);
+		$("#singlePayAmount").val(totalCostForpay);
+		$("#totalAmountToPay").val(totalCostForpay);
+		$("#totalAmountToPaytotals").val(totalCostForpay);
 			
 	}else if(selected == "bipay"){
 		$("#biPayAmountDiv").show();
@@ -429,36 +1000,88 @@ $("input[name='paymentOptionsRadio']").change(function (){
 			$("#discountTextBox").val('0');
 		}
 	} */
-	calculateFinalAmount()
+	calculateFinalAmount();
 	
 
 	$("#paymentType").show();
 	
 	
 });
-
-$(document).on('change', "#discountPercentage", function() {
-
-	calculateFinalAmount()
-	
-});
+//
+//$(document).on('change', "#discountPercentage", function() {
+//
+//	calculateFinalAmount()
+//	
+//});
 
 
 
 function calculateFinalAmount(){
-
-	<?php if(!$customermembership){?>
-	var finalAmount = (parseInt($("#totalAmountToPay").val())+parseInt($("#membershipAmount").val()));
+        var second_child_discount_amt=0;
+	var second_class_discount_amt=0;
+        <?php if(!$customermembership){?>
+	var finalAmount = (parseFloat($("#totalAmountToPay").val())+parseFloat($("#membershipAmount").val()));
 	<?php }else{?>
-	var finalAmount = (parseInt($("#totalAmountToPay").val()));
+	var finalAmount = (parseFloat($("#totalAmountToPay").val()));
 	<?php }?>
-	console.log(finalAmount);
+	//console.log(finalAmount);
+        //var discountPercentage  =  parseInt($("input[name='enrollmentClassesSelect']:checked").attr('discountpercentage'));
+                            
+                            if(DiscountAmount==0){
+                                    var percentAmount = parseFloat($("#totalAmountToPaytotals").val()*DiscountPercentage/100);
+                                    $('#discount').html('<p>Discount:'+DiscountPercentage+"%</p>");
+                            }
+//                            else{
+//                                    var percentAmount=DiscountAmount;
+//                                    $('#discount').html("<p>Discount:Amount</p>");
+//                            }
+                        
+                                $("#discountTextBox").val("-"+percentAmount);
+                                
+                        	finalAmount = parseFloat(finalAmount-percentAmount);
+                                //lol
+                                <?php if($discount_second_child_elligible){ ?>
+                                    
+                                    $('#second_child_discount').html('<p>Sibling Consideration:'+{{$discount_second_child}}+'%</p>');
+                                    second_child_discount_amt=parseFloat(finalAmount*{{$discount_second_child}}/100);
+                                    $('#second_child_amount').val('-'+second_child_discount_amt);
+                                    finalAmount=parseFloat(finalAmount-second_child_discount_amt);
+                                <?php } ?>
+                                  
+                                <?php if($discount_second_class_elligible){ ?>
+                                    
+                                    $('#second_class_discount').html('<p>Multi Classes:'+{{$discount_second_class}}+'%</p>');
+                                    second_class_discount_amt=parseFloat(finalAmount*{{$discount_second_class}}/100);
+                                    $('#second_class_amount').val('-'+second_class_discount_amt);
+                                    finalAmount=parseFloat(finalAmount-second_class_discount_amt);
+                                <?php } ?>
+                                    
+                        	$("#subtotal").val(Math.round(finalAmount*100)/100);
+                                var tax =(finalAmount*14.5/100);
+                                tax=Math.round(tax*100)/100;
+                              
+                                $("#taxAmount").val(tax);
+                                finalAmount=finalAmount-tax;
+                                finalAmount=Math.round(finalAmount*100)/100;
+                        	$("#grandTotal").val(finalAmount);
+                                
+                                $('#discountPercentage').val(DiscountPercentage);
+                               
+        /*
+            $.ajax({
+			type: "POST",
+			url: "{{URL::to('/quick/discount/getdiscount')}}",
+                        data: {'studentId':studentId,'seasonId':$('#SeasonsCbx').val()},
+			dataType: 'json',
+			success: function(response){
+                            console.log(response.status);
+                            console.log(response.discount);
+                            
+                              
+                        }
+             }) ;
 
-	var discountPercentage  =  $("#discountPercentage").val();
-
-	var percentAmount = ($("#totalAmountToPaytotals").val()*discountPercentage/100);
-	$("#discountTextBox").val("-"+percentAmount);
-
+	*/
 	/* var percentAmount = 0;
 	$("#discountPercentage").val('0');
 	$("#discountText").html("No discount applied");
@@ -497,13 +1120,6 @@ function calculateFinalAmount(){
 
 	
 	
-	finalAmount = (finalAmount-percentAmount);
-	
-	$("#subtotal").val(finalAmount);
-	
-	var tax = Math.floor(((14.5/100)*parseInt(finalAmount)))
-	$("#taxAmount").val(tax);
-	$("#grandTotal").val((tax+finalAmount));
 	
 }
 
@@ -517,7 +1133,7 @@ function applyDiscountOnLastPayment(){
 
 
 $(document).on('change', "#membershipType", function() {
-	console.log($(this).val());
+	//console.log($(this).val());
 
 	if($(this).val() == '1'){
 		
@@ -539,6 +1155,8 @@ $("#closeEnrollmentModal").click(function (){
 
 	$("#batchCbx").val("");
 	$("#eligibleClassesCbx").val("");
+        $('#enrollmentStartDate').val('');
+        $('#enrollmentEndDate').val('');
 	$("#paymentOptions").hide();
 	$("#sessionsTable").hide();
 	$("#enrollmentOptions").val("enroll");
@@ -547,6 +1165,11 @@ $("#closeEnrollmentModal").click(function (){
 			   window.location.reload(1);
 	}
 	
+});
+
+$('#enrollmentStartDate').change(function(){
+   $('#batch1Msg').html('');
+   $('#batchCbx').val('');
 });
 
 
@@ -567,36 +1190,82 @@ $('#getSchedulesSessions').click(function (){
 
 var todaysDate = new Date();
 $("#enrollmentStartDate").kendoDatePicker({
-	/* change:function (){
-		prepareGetClasses()
-	}, */
+            format: "yyyy-MM-dd",
+	// change:function (){
+//		prepareGetClasses()
+//	} 
 	//min: todaysDate
 });
 
 
 $("#enrollmentEndDate").kendoDatePicker({
 	change:function (){
-		prepareGetClasses()
+		prepareGetClasses();
 	}
 	
 });
+
 
 function prepareGetClasses(){
 	$("#paymentOptions").hide();
 	$("#finalPaymentDiv").hide();
 	$("input[name='paymentOptionsRadio']").attr('checked', false);
-
-	
+       
+	//checking for first case 1 season only
+       // console.log('prepareclasses');
+        if(firstselectedNoOfClass===selectedNoOfClass){
+           // console.log('==')
+            if($('#SeasonsCbx').val()!='' && $('#batchCbx').val() != "" && $('#enrollmentStartDate').val() != "" && $("#eligibleClassesCbx").val() != ""){
+                    console.log('valid 1 season only');
+                    $("#messageStudentEnrollmentDiv").html('');
+                    $("#availableSessions").html(firstselectedNoOfClass);
+                    $("#totalAmount").html((firstselectedNoOfClass*batch1ClassCost));
+                    $("#amountPerSesssion").html(batch1ClassCost);
+	            $("#totalEnrollmentAmount").val(firstselectedNoOfClass*batch1ClassCost);
+	            $("#sessionsTable").show();
+                    $("#enrollNow").show();
+                    $('#enrollmentcontinue2').hide();
+                    $('#enrollmentcontinue3').hide();
+                    $('#enrollNow').addClass('disabled');
+            }
+        }else if((firstselectedNoOfClass+secondselectedNoOfClass)===selectedNoOfClass){
+            if($('#SeasonsCbx').val()!='' && $('#batchCbx').val() != "" && $('#enrollmentStartDate').val() != "" && $("#eligibleClassesCbx").val() != "" &&
+               $('#SeasonsCbx2').val()!='' && $('#batchCbx2').val() != "" && $("#eligibleClassesCbx2").val() != "" ){
+                    console.log('valid 2 seasons only');
+                    $("#messageStudentEnrollmentDiv").html('');
+                    $("#availableSessions").html(firstselectedNoOfClass+'+'+secondselectedNoOfClass+'='+(firstselectedNoOfClass+secondselectedNoOfClass));
+                    $("#totalAmount").html((firstselectedNoOfClass*batch1ClassCost)+(secondselectedNoOfClass*batch2ClassCost));
+                    $("#amountPerSesssion").html('('+batch1ClassCost+')('+batch2ClassCost+')');
+	            $("#totalEnrollmentAmount").val((firstselectedNoOfClass*batch1ClassCost)+(secondselectedNoOfClass*batch2ClassCost));
+	            $("#sessionsTable").show();
+                    $("#enrollNow").show();
+                    $('#enrollmentcontinue3').hide();
+                    $('#enrollNow').addClass('disabled');
+            }
+        }else if((firstselectedNoOfClass+secondselectedNoOfClass+thirdselectedNoOfClass)===selectedNoOfClass){
+                    console.log('valid 3 seasons only');
+                    $("#messageStudentEnrollmentDiv").html('');
+                    $("#availableSessions").html(firstselectedNoOfClass+'+'+secondselectedNoOfClass+'+'+thirdselectedNoOfClass+'='+(firstselectedNoOfClass+secondselectedNoOfClass+thirdselectedNoOfClass));
+                    $("#totalAmount").html((firstselectedNoOfClass*batch1ClassCost)+(secondselectedNoOfClass*batch2ClassCost)+(thirdselectedNoOfClass*batch3ClassCost));
+                    $("#amountPerSesssion").html('('+batch1ClassCost+')('+batch2ClassCost+')('+batch3ClassCost+')');
+	            $("#totalEnrollmentAmount").val((firstselectedNoOfClass*batch1ClassCost)+(secondselectedNoOfClass*batch2ClassCost)+(thirdselectedNoOfClass*batch3ClassCost));
+	            $("#sessionsTable").show();
+                    $("#enrollNow").show();
+                    $('#enrollNow').addClass('disabled');
+        }
+        
+        
+       /* 
 	if($('#batchCbx').val() != "" && $('#enrollmentStartDate').val() != "" && $('#enrollmentEndDate').val() != "" && $("#eligibleClassesCbx").val() != ""){
 
 		$("#messageStudentEnrollmentDiv").html('');
-		getSessionsForClasses()
+		getSessionsForClasses();
 		$("#enrollNow").show();
-
+                $('#enrollNow').addClass('disabled');
 	}else{
 		$("#messageStudentEnrollmentDiv").html('<p class="uk-alert uk-alert-danger">Please fill up required Fields.</p>');
 	}
-	
+	*/
 }
 
 $("#enrollKidForm").validator().on('submit', function (e) {
@@ -617,14 +1286,17 @@ $("#enrollKidForm").validator().on('submit', function (e) {
 });
  */
 $(".eligibleClassesCbx").change(function (){
-	console.log(this.id);
+          if($('#SeasonsCbx').val()==''){
+        $("#messageStudentEnrollmentDiv").html('<p class="uk-alert uk-alert-danger"> please select the season.</p>');
+    }else{
+	//console.log(this.id);
 	var selector = "";
 	if(this.id == "eligibleClassIntro"){
 		selector = "introbatchCbx";
 		from = this;
 	}else{
 		var classId = $(this).val();
-		$.ajax({
+		/*$.ajax({
 	        type: "POST",
 	        url: "{{URL::to('/quick/checkenrollmentExists')}}",
 	        data: {'classId': classId, "studentId":studentId},
@@ -637,68 +1309,283 @@ $(".eligibleClassesCbx").change(function (){
 	      		 $("#messageStudentEnrollmentDiv").html('');
 	      	   }
 	        }
-	    });
+	    });*/
 		selector = "batchCbx";
 		from = this;
 	}
-	getBatchesBasedOnClasses(selector,from);
+	getBatchesBasedOnClasses(selector,from,$('#SeasonsCbx').val());
+        $('#enrollmentcontinue2').hide();
+        $('#enrollmentcontinue3').hide();
+        $('#batch1Msg').html('');
+        }
+});
+$(".eligibleClassesCbx2").change(function (){
+          if($('#SeasonsCbx2').val()==''){
+        $("#messageStudentEnrollmentDiv").html('<p class="uk-alert uk-alert-danger"> please select the season.</p>');
+    }else{
+	//console.log(this.id);
+	var selector = "";
+	if(this.id == "eligibleClassIntro"){
+		selector = "introbatchCbx";
+		from = this;
+	}else{
+		var classId = $(this).val();
+		/*$.ajax({
+	        type: "POST",
+	        url: "{{URL::to('/quick/checkenrollmentExists')}}",
+	        data: {'classId': classId, "studentId":studentId},
+	        dataType:"json",
+	        success: function (response)
+	        {
+	      	   if(response.status == "exist"){
+	      		 $("#messageStudentEnrollmentDiv").html('<p class="uk-alert uk-alert-danger"> Course already enrolled.</p>');
+	      	   }else{
+	      		 $("#messageStudentEnrollmentDiv").html('');
+	      	   }
+	        }
+	    });*/
+		selector = "batchCbx2";
+		from = this;
+	}
+	getBatchesBasedOnClasses(selector,from,$('#SeasonsCbx2').val());
+        $('#enrollmentcontinue3').hide();
+        $('#batch2Msg').html('');
+        }
+});
+$(".eligibleClassesCbx3").change(function (){
+          if($('#SeasonsCbx3').val()==''){
+        $("#messageStudentEnrollmentDiv").html('<p class="uk-alert uk-alert-danger"> please select the season.</p>');
+    }else{
+	//console.log(this.id);
+	var selector = "";
+	if(this.id == "eligibleClassIntro"){
+		selector = "introbatchCbx";
+		from = this;
+	}else{
+		var classId = $(this).val();
+		/*$.ajax({
+	        type: "POST",
+	        url: "{{URL::to('/quick/checkenrollmentExists')}}",
+	        data: {'classId': classId, "studentId":studentId},
+	        dataType:"json",
+	        success: function (response)
+	        {
+	      	   if(response.status == "exist"){
+	      		 $("#messageStudentEnrollmentDiv").html('<p class="uk-alert uk-alert-danger"> Course already enrolled.</p>');
+	      	   }else{
+	      		 $("#messageStudentEnrollmentDiv").html('');
+	      	   }
+	        }
+	    });*/
+		selector = "batchCbx3";
+		from = this;
+	}
+	getBatchesBasedOnClasses(selector,from,$('#SeasonsCbx3').val());
+        $('#batch3Msg').html('');
+        }
 });
 
-
-
-
+function getSeasons(){
+$.ajax({
+			type: "POST",
+			url: "{{URL::to('/quick/season/getSeasonsForEnrollment')}}",
+                        data: {},
+			dataType: 'json',
+			success: function(response){
+                            console.log(response.season_data);
+                            $('#seasonMsgDiv').html("<p class='uk-alert uk-alert-warning'> Season StartDate: "+response.season_data[0]['start_date']+" End Date: "+response.season_data[0]['end_date']+"</p>");
+                            $(".SeasonsCbx").empty(""); 
+                            $(".SeasonsCbx2").empty(""); 
+                            $(".SeasonsCbx3").empty(""); 
+                            string = '';
+                            for(var i=0;i<response.season_data.length;i++){
+                                string += '<option value='+response.season_data[i]['id']+'>'+response.season_data[i]['season_name']+'</option>';
+                            }
+                            //$('#enrollmentEndDate').val(response.season_data[0]['end_date']);
+                            $('.SeasonsCbx').append(string); 
+                            $('.SeasonsCbx2').append(string);
+                            $('.SeasonsCbx3').append(string);
+                           // console.log(string);
+                        }
+             })  ;
+}
 
 
 
 function getEligibleClasses(){
-
-	  $.ajax({
+    var yearAndMonth= (parseInt(ageYear*12)+parseInt(ageMonth));
+          console.log(ageYear);
+          console.log(ageMonth);
+          console.log(yearAndMonth);
+	$.ajax({
         type: "POST",
         url: "{{URL::to('/quick/eligibleClassess')}}",
-        data: {'ageYear': ageYear, 'ageMonth': ageMonth, 'gender':studentGender},
+        data: {'ageYear': ageYear, 'ageMonth': ageMonth, 'gender':studentGender,'yearAndMonth':yearAndMonth},
         dataType:"json",
         success: function (response)
         {
-          console.log(response);
-      	  $(".eligibleClassesCbx").empty("");      	  
+            
+         // console.log(response);
+      	  $(".eligibleClassesCbx").empty("");  
+          //$(".eligibleClassesCbx2").empty(""); 
+          //$(".eligibleClassesCbx3").empty(""); 
       	  $string = '<option value=""></option>';
       	  $.each(response, function (index, item) {
       		  //console.log(index+" = "+item);
       		  $string += '<option value='+item.id+'>'+item.class_name+'</option>';               
             });
-      	  $('.eligibleClassesCbx').append($string); 
+      	  $('.eligibleClassesCbx').append($string);
+          //$('.eligibleClassesCbx2').append($string);
+          //$('.eligibleClassesCbx3').append($string);
         }
     });
 }
 
+function getEligibleClassesForBatch2WithAgeChange(){
+    $.ajax({
+        type: "POST",
+        url: "{{URL::to('/quick/eligibleClassessForOtherBatches')}}",
+        data: {'FutureAgeDate':enddate1,'studentDob':"{{$student->student_date_of_birth}}",},
+        dataType:"json",
+        success: function (response)
+        {
+      	  $(".eligibleClassesCbx2").empty("");  
+          //$(".eligibleClassesCbx2").empty(""); 
+          //$(".eligibleClassesCbx3").empty(""); 
+      	  $string = '<option value=""></option>';
+      	  $.each(response, function (index, item) {
+      		  //console.log(index+" = "+item);
+      		  $string += '<option value='+item.id+'>'+item.class_name+'</option>';               
+            });
+      	  $('.eligibleClassesCbx2').append($string);
+          $('#enrollmentbtnsdisplay1').css('display','none');
+          //$('.eligibleClassesCbx2').append($string);
+          //$('.eligibleClassesCbx3').append($string);
+          $('#enrollmentcontinue2').show();
+        
+        }
+    });
+}
 
+function getEligibleClassesForBatch2WithoutAgeChange(){
+   var yearAndMonth= (parseInt(ageYear*12)+parseInt(ageMonth));
+          //console.log(ageYear);
+          //console.log(ageMonth);
+          //console.log(yearAndMonth);
+     $.ajax({
+        type: "POST",
+        url: "{{URL::to('/quick/eligibleClassess')}}",
+        data: {'ageYear': ageYear, 'ageMonth': ageMonth, 'gender':studentGender,'yearAndMonth':yearAndMonth},
+        dataType:"json",
+        success: function (response)
+        {
+      	  $(".eligibleClassesCbx2").empty("");  
+          //$(".eligibleClassesCbx2").empty(""); 
+          //$(".eligibleClassesCbx3").empty(""); 
+      	  $string = '<option value=""></option>';
+      	  $.each(response, function (index, item) {
+      		  //console.log(index+" = "+item);
+      		  $string += '<option value='+item.id+'>'+item.class_name+'</option>';               
+            });
+      	  $('.eligibleClassesCbx2').append($string);
+          $('#enrollmentbtnsdisplay1').css('display','none');
+          //$('.eligibleClassesCbx2').append($string);
+          //$('.eligibleClassesCbx3').append($string);
+          $('#enrollmentcontinue2').show();
+        
+        }
+    });
+}
 
+function getEligibleClassesForBatch3WithAgeChange(){
+    $.ajax({
+        type: "POST",
+        url: "{{URL::to('/quick/eligibleClassessForOtherBatches')}}",
+        data: {'FutureAgeDate':enddate2,'studentDob':"{{$student->student_date_of_birth}}",},
+        dataType:"json",
+        success: function (response)
+        {
+      	  $(".eligibleClassesCbx3").empty("");  
+          //$(".eligibleClassesCbx2").empty(""); 
+          //$(".eligibleClassesCbx3").empty(""); 
+      	  $string = '<option value=""></option>';
+      	  $.each(response, function (index, item) {
+      		  //console.log(index+" = "+item);
+      		  $string += '<option value='+item.id+'>'+item.class_name+'</option>';               
+            });
+      	  $('.eligibleClassesCbx3').append($string);
+          $('#enrollmentbtnsdisplay2').css('display','none');
+          $('#enrollmentcontinue3').show();
+          //$('.eligibleClassesCbx2').append($string);
+          //$('.eligibleClassesCbx3').append($string);
+        
+        }
+    });
+}
 
-function getBatchesBasedOnClasses(selector, from){
-console.log($(from).val());
+function getEligibleClassesForBatch3WithoutAgeChange(){
+   var yearAndMonth= (parseInt(ageYear*12)+parseInt(ageMonth));
+          //console.log(ageYear);
+          //console.log(ageMonth);
+          //console.log(yearAndMonth);
+     $.ajax({
+        type: "POST",
+        url: "{{URL::to('/quick/eligibleClassess')}}",
+        data: {'ageYear': ageYear, 'ageMonth': ageMonth, 'gender':studentGender,'yearAndMonth':yearAndMonth},
+        dataType:"json",
+        success: function (response)
+        {
+      	  $(".eligibleClassesCbx3").empty("");  
+          //$(".eligibleClassesCbx2").empty(""); 
+          //$(".eligibleClassesCbx3").empty(""); 
+      	  $string = '<option value=""></option>';
+      	  $.each(response, function (index, item) {
+      		  //console.log(index+" = "+item);
+      		  $string += '<option value='+item.id+'>'+item.class_name+'</option>';               
+            });
+      	  $('.eligibleClassesCbx3').append($string);
+          $('#enrollmentbtnsdisplay2').css('display','none');
+          $('#enrollmentcontinue3').show();
+          //$('.eligibleClassesCbx2').append($string);
+          //$('.eligibleClassesCbx3').append($string);
+        
+        }
+    });
+}
+
+function getBatchesBasedOnClasses(selector, from,seasonId){
+  
+//console.log($(from).val());
+//console.log($('#SeasonsCbx').val());
 	$.ajax({
         type: "POST",
-        url: "{{URL::to('/quick/batchesByClass')}}",
-        data: {'classId': $(from).val()},
+        url: "{{URL::to('/quick/batchesByClassSeasonId')}}",
+        data: {'classId': $(from).val(),'seasonId':seasonId},
         dataType:"json",
         success: function (response)
         {      	   
+          //  console.log(response[0]['day']);
+            
       	  $('#'+selector).empty();      	  
       	  $string = '<option value=""></option>';
       	  $.each(response, function (index, item) {
-      		  console.log(index+" = "+item);
       		  $string += '<option value='+item.id+'>'+item.batch_name+' '+item.day+'  '+item.start_time+' - '+item.end_time+' '+item.instructor+'</option>';               
             });
-      	  $('#'+selector).append($string); 
+      	  $('#'+selector).append($string);
+          $('#'+selector).val();
+          
       	  //$('#introbatchCbx').append($string);
+        
         }
-    }); 
+    });
+    
 }
 
 
 
 
 var availableSessionCount = 0;
+var eachClassCost=0;
 function getSessionsForClasses(){
 
 	
@@ -706,13 +1593,16 @@ function getSessionsForClasses(){
 		$.ajax({
 	        type: "POST",
 	        url: "{{URL::to('/quick/getBatcheSchedules')}}",
-	        data: {'batchId': $('#batchCbx').val(), "enrollmentStartDate":$('#enrollmentStartDate').val(), "enrollmentEndDate":$('#enrollmentEndDate').val()},
+	        data: {'batchId': $('#batchCbx').val(), "enrollmentStartDate":$('#enrollmentStartDate').val(), "enrollmentEndDate":$('#enrollmentEndDate').val(),'seasonId':$('#SeasonsCbx').val()},
 	        dataType:"json",
 	        success: function (response)
-	        {      	   
+	        {   
+                    //console.log(response);
+                    
 	            $("#availableSessions").html(response.availableSession);
 	            $("#totalAmount").html(response.amountTotal);
-
+                    eachClassCost = response.eachClassAmount;
+                    $("#amountPerSesssion").html(eachClassCost);
 	            $("#totalEnrollmentAmount").val(response.amountTotal);
 	            availableSessionCount = response.availableSession;
 
@@ -721,6 +1611,7 @@ function getSessionsForClasses(){
 
 	            
 	        	$("#sessionsTable").show();
+                        
 	        }
 	    }); 
 
@@ -728,9 +1619,11 @@ function getSessionsForClasses(){
 }
 
 function enrollnow(){
-	
+	//console.log($("#enrollKidForm").serialize());
 	event.preventDefault();
 	$("#enrollNow").hide();
+        $('#MsgDiv').hide();
+        $('#seasonMsgDiv').hide();
 	$("#KidsformBody").hide();
 	$("#messageStudentEnrollmentDiv").html('<p class="uk-alert uk-alert-info">Enrolling student.Please wait till process is completed.</p>');
 	$.ajax({
@@ -741,25 +1634,27 @@ function enrollnow(){
         dataType:"json",
         success: function (response)
         {
+            console.log(response);
+                /*
         	if(response.status == "success"){
-
-
+                        
+                
             	if(response.printUrl == ""){
 					$("#messageStudentEnrollmentDiv").html('<p class="uk-alert uk-alert-success">Student has been successfully enrolled. Please wait till this page reloads</p>');
 					setTimeout(function(){
 					   window.location.reload(1);
 					}, 5000);
-            	}else{
+                    }else{
 
 					var printvars = '<a target="_blank" href="'+response.printUrl+'" class="btn btn-primary">Print</a>';
             		$("#messageStudentEnrollmentDiv").html('<p class="uk-alert uk-alert-success">Student has been successfully enrolled. Please click the print button below.</p>'+printvars);
 
             		$("#closeEnrollmentModal").data("closemode",'print');
-            	}
-        	}else{
-				$("#.").hide();
+                    }
+        	}else{ 
+                        //$("#messageStudentEnrollmentDiv").hide();
         		$("#messageStudentEnrollmentDiv").html('<p class="uk-alert uk-alert-danger">Sorry! Student could not be enrolled.</p>');
-        	}     	   
+        	} */    	   
         }
     }); 
 	
@@ -840,17 +1735,18 @@ $("#saveIntroVisitBtn").click(function (){
 function saveIv(){
 
 
-	var ivid = $("#iveditSelect").data('iveditid');
-	var ivstatus = $("#iveditSelect").val();
+	//var ivid = $("#iveditSelect").data('iveditid');
+	//var ivstatus = $("#iveditSelect").val();
 
 	$.ajax({
         type: "POST",
         url: "{{URL::to('/quick/editIntrovisit')}}",
-        data:{'status':ivstatus,'id':ivid, "customerCommentTxtarea":$("#ivcustomerCommentTxtarea").val()},
+        data:{'status':ivstatus,'id':ivid, "customerCommentTxtarea":$("#ivcustomerCommentTxtarea").val(),'reschedule-date':$('#reschedule-date').val(),},
         //data: {'classId': $("#eligibleClassesCbx").val(), 'batchId':$("#batchCbx").val(), "studentId":studentId},
         dataType:"json",
         success: function (response)
         {
+            
         	if(response.status == "success"){
 
         		$("#ivEditForm").hide();
@@ -870,31 +1766,880 @@ function saveIv(){
     }); 
 }
 function ReceivePendingDue(pendingId,pendingAmount,discount){
- var amountAfterDiscount=((discount/100)*parseInt(pendingAmount));   
-       $.ajax({
-			type: "POST",
-			url: "{{URL::to('/quick/creatependingorder')}}",
-                        data: {'pending_id':pendingId,'pendingamount':amountAfterDiscount},
-			dataType: 'json',
-			success: function(response){
-                            console.log(response.status);
-                            $('#payments').empty();
-                            var printvars = '<a target="_blank" href="'+response.printurl+'" class="btn btn-primary">Print</a>';
-                                                     
-                            $('#pendingamountbody').html(printvars);
-                            $('#pendingamount').modal('show'); 
-                            $('#pendingamountclose').click(function(){
-                            window.location.reload(1);        
-                            });
-                        }
-             })
+  $('#pending_id').val(pendingId);
+  $('#pending_amt').val(pendingAmount);
+  $('#pending_discount').val(discount);
+  $('#receivepayment').addClass('disabled');
+  $('#receiveCardDetailsDiv').css('display','none');
+  $('#receiveChequeDetailsDiv').css('display','none');
+  $('#receiveemailEnrollPrintDiv').css('display','none');
+$('#receivedue').modal('show');
 
 }
 
 
 
+$('#receivepayment').click(function(){
+ 
+    var amountAfterDiscount=(($('#pending_discount').val()/100)*parseInt($('#pending_amt').val()));
+    if($("input[name=paymentReceiveTypeRadio]:checked").val()=='card'){
+        if(($('#receivecard4digits').val()!='') && ($('#receivecardBankName').val()!='' && $('#receivecardRecieptNumber').val()!='')){
+            //console.log('validation passed');
+            var print=$('#receiveinvoicePrintOption').is(":checked");
+            $.ajax({
+			type: "POST",
+			url: "{{URL::to('/quick/creatependingorder')}}",
+                        data: {'pending_id':$('#pending_id').val(),'pendingamount':amountAfterDiscount,
+                               'cardType':$('#receivecardType').val(),'carddigits':$('#receivecard4digits').val(),
+                               'bankName':$('#receivecardBankName').val(),'cardRecieptNumber':$('#receivecardRecieptNumber').val(),
+                               'invoicePrint':print,'invoiceEmail':$('#receiveemailOption').is(":checked"),
+                               'paymentType':'card',},
+			dataType: 'json',
+			success: function(response){
+                            //console.log(response);
+                            //console.log(print);
+                            $('#receiveduebody').empty();
+                            var printvars = '<a target="_blank" href="'+response.printurl+'" class="btn btn-primary">Print</a>';
+                            if(print){                         
+                              $('#receiveduebody').empty();
+                              $('#receiveduebody').html("<p class='uk-alert uk-alert-success'>pending Due is succesfully received.</p><br>"+printvars);
+                             $('#receivepayment').addClass('disabled');
+                            }else{
+                                $('#receiveduebody').empty();
+                                $('#receiveduebody').html("<p class='uk-alert uk-alert-success'>pending Due is succesfully received.</p>");
+                                $('#receivepayment').addClass('disabled');
+                            }
+                            
+                            //$('#pendingamount').modal('show'); 
+                            $('#receivedueclose').click(function(){
+                                window.location.reload(1);        
+                            });
+                        }
+             });
+        }else{
+            $('#receiveDueMsg').html('<p class="uk-alert uk-alert-warning"> please select all required details</p>');
+        }
+        
+        
+    }
+    if($("input[name=paymentReceiveTypeRadio]:checked").val()=='cash'){
+        //console.log('cash');
+        var print=$('#receiveinvoicePrintOption').is(":checked");
+        $('#receivepayment').addClass('disabled');
+        $.ajax({
+			type: "POST",
+			url: "{{URL::to('/quick/creatependingorder')}}",
+                        data: {'pending_id':$('#pending_id').val(),'pendingamount':amountAfterDiscount,'paymentType':'cash','invoiceEmail':$('#receiveemailOption').is(":checked")},
+			dataType: 'json',
+			success: function(response){
+                           // console.log(response.status);
+                            
+                            var printvars = '<a target="_blank" href="'+response.printurl+'" class="btn btn-primary">Print</a>';
+                            if(print){                         
+                              $('#receiveduebody').empty();
+                              $('#receiveduebody').html("<p class='uk-alert uk-alert-success'>pending Due is succesfully received.</p><br>"+printvars);
+                             $('#receivepayment').addClass('disabled');
+                            }else{
+                                $('#receiveduebody').empty();
+                                $('#receiveduebody').html("<p class='uk-alert uk-alert-success'>pending Due is succesfully received.</p>");
+                                $('#receivepayment').addClass('disabled');
+                            }
+                            
+                            //$('#pendingamount').modal('show'); 
+                           $('#receivedueclose').click(function(){
+                            window.location.reload(1);        
+                            });
+                        }
+             });
+    }
+    if($("input[name=paymentReceiveTypeRadio]:checked").val()=='cheque'){
+        if(($('#receivechequeBankName').val()!='') && ($('#receivechequeNumber').val()!='')){
+            //console.log('validation passed');
+            
+            var print=$('#receiveinvoicePrintOption').is(":checked");
+            $.ajax({
+			type: "POST",
+			url: "{{URL::to('/quick/creatependingorder')}}",
+                        data: {'pending_id':$('#pending_id').val(),'pendingamount':amountAfterDiscount,
+                               'bankChequeName':$('#receivechequeBankName').val(),'chqueNo':$('#receivechequeNumber').val(),
+                               'invoicePrint':print,'invoiceEmail':$('#receiveemailOption').is(":checked"),
+                               'paymentType':'cheque',},
+			dataType: 'json',
+			success: function(response){
+                            //console.log(response);
+                            
+                            
+                            var printvars = '<a target="_blank" href="'+response.printurl+'" class="btn btn-primary">Print</a>';
+                            if(print){                         
+                            $('#receiveduebody').empty();
+                             $('#receiveduebody').html("<p class='uk-alert uk-alert-success'>pending Due is succesfully received.</p><br>"+printvars);
+                             $('#receivepayment').addClass('disabled');
+                            }else{
+                                $('#receiveduebody').empty();
+                                $('#receiveduebody').html("<p class='uk-alert uk-alert-success'>pending Due is succesfully received.</p>");
+                                $('#receivepayment').addClass('disabled');
+                            
+                            }
+                            
+                            //$('#pendingamount').modal('show'); 
+                            $('#receivedueclose').click(function(){
+                            window.location.reload(1);        
+                            });
+                        }
+             });
+            
+        }else{
+            $('#receiveDueMsg').html('<p class="uk-alert uk-alert-warning"> please select all required details</p>');
+        }
+    }
+    
+    
+       
+});
+
+
+$('#CustomerType').change(function(){
+    if($('#singlePayRadio').prop('checked') == true){
+                if($('#CustomerType').val()=='OldCustomer'){
+                 $('#Order-date').css("display","block");
+                 //console.log($('#OrderDate').val());
+                }
+                if($('#CustomerType').val()=='NewCustomer'){
+                 $('#Order-date').css("display","none");
+                }
+    }
+    if($('#biPayRadio').prop('checked') == true){
+                if($('#CustomerType').val()=='NewCustomer'){
+                
+                 $('#Order-date').css("display","none");
+                 $('#Order-date2').css('display','none');
+                 $('#Order-date3').css('display','none');
+                 $('#Order-date4').css('display','none');
+                }
+                if($('#CustomerType').val()=='OldCustomer'){
+                    $('#Order-date').css('display','block');
+                    $.ajax({
+			type: "POST",
+			url: "{{URL::to('/quick/checkBiPayOrderDate')}}",
+                        data: {'bipayamount1':$('#bipayAmount1').val(),'bipayamount2':$('#bipayAmount2').val(),
+                               'startdate':$('#enrollmentStartDate').val(),'batchid':$('#batchCbx').val(),
+                               'enddate':$('#enrollmentEndDate').val(),'seasonid':$('#SeasonsCbx').val(),},
+			dataType: 'json',
+			success: function(response){
+                            //console.log(response);
+                            if(response.status=='true'){
+                                //console.log(response);
+                             
+                            $('#Order-date2').css('display','block');
+                            $('.Order-Date2').css('display','block');
+                            $('#paymentType2').css('display','block');
+                           }
+                           if(response.status=='false'){
+                               $('#Order-date2').css('display','none');
+                               $('.Order-Date2').css('display','none');
+                               $('#paymentType2').css('display','none');
+                            
+                           }
+                        }
+                    });
+                }
+    }
+    if($('#multiPayRadio').prop('checked') == true){
+                   
+                if($('#CustomerType').val()=='NewCustomer'){
+                 $('#Order-date').css("display","none");
+                 $('#Order-date2').css('display','none');
+                 $('#Order-date3').css('display','none');
+                 $('#Order-date4').css('display','none');
+               
+                }
+                if($('#CustomerType').val()=='OldCustomer'){
+                    $('#Order-date').css('display','block');
+                    $.ajax({
+			type: "POST",
+			url: "{{URL::to('/quick/checkmultiPayOrderDate')}}",
+                        data: {'multipayAmount1':$('#multipayAmount1').val(),'multipayAmount2':$('#multipayAmount2').val(),
+                               'multipayAmount3':$('#multipayAmount3').val(),'multipayAmount4':$('#multipayAmount4').val(),
+                               'startdate':$('#enrollmentStartDate').val(),'batchid':$('#batchCbx').val(),
+                               'enddate':$('#enrollmentEndDate').val(),'seasonid':$('#SeasonsCbx').val(),},
+			dataType: 'json',
+			success: function(response){
+                            console.log('multipay ajax');
+                            console.log(response);
+                            
+                            if(response.status=='two'){
+                                 $('#Order-date2').css('display','block');
+                                 $('.Order-Date2').css('display','block');
+                                 $('#paymentType2').css('display','block');
+                                 
+                            }
+                            if(response.status=='three'){
+                                 $('#Order-date2').css('display','block');
+                                 $('#Order-date3').css('display','block');
+                                 $('.Order-Date2').css('display','block');
+                                 $('#paymentType2').css('display','block');
+                                 $('.Order-Date3').css('display','block');
+                                 $('#paymentType3').css('display','block');
+                     
+                            }
+                            if(response.status=='four'){
+                                 $('#Order-date2').css('display','block');
+                                 $('#Order-date3').css('display','block');
+                                 $('#Order-date4').css('display','block');
+                                 $('.Order-Date2').css('display','block');
+                                 $('#paymentType2').css('display','block');
+                                 $('.Order-Date3').css('display','block');
+                                 $('#paymentType3').css('display','block');
+                                 $('.Order-Date4').css('display','block');
+                                 $('#paymentType4').css('display','block')
+                            }
+                            
+                        }
+                    });
+                }
+    }
+});
+
+
+
+$("input[name='paymentTypeRadioOldCustomer2']").change(function (){
+    var selectedPaymentType2 = $("input[type='radio'][name='paymentTypeRadioOldCustomer2']:checked").val();
+    if(selectedPaymentType2 == "card"){
+		$("#chequeDetailsDiv2").hide();
+		$("#cardDetailsDiv2").show();
+
+
+		$("#cardType2").attr("required",true);
+		$("#card4digits2").attr("required",true);
+		$("#cardBankName2").attr("required",true);
+		$("#cardRecieptNumber2").attr("required",true);
+
+
+		$("#chequeBankName2").attr("required",false);
+		$("#chequeNumber2").attr("required",false);
+
+	}else if(selectedPaymentType2 == "cheque"){
+		$("#chequeDetailsDiv2").show();
+		$("#cardDetailsDiv2").hide();
+
+		$("#cardType2").attr("required",false);
+		$("#card4digits2").attr("required",false);
+		$("#cardBankName2").attr("required",false);
+		$("#cardRecieptNumber2").attr("required",false);
+
+
+		$("#chequeBankName2").attr("required",true);
+		$("#chequeNumber2").attr("required",true);
+	}
+	else if(selectedPaymentType2 == "cash"){
+		$("#chequeDetailsDiv2").hide();
+		$("#cardDetailsDiv2").hide();
+
+		$("#cardType2").attr("required",false);
+		$("#card4digits2").attr("required",false);
+		$("#cardBankName2").attr("required",false);
+		$("#cardRecieptNumber2").attr("required",false);
+
+
+		$("#chequeBankName2").attr("required",false);
+		$("#chequeNumber2").attr("required",false);
+	}
+});
+
+
+$("input[name='paymentTypeRadioOldCustomer3']").change(function (){
+    var selectedPaymentType3 = $("input[type='radio'][name='paymentTypeRadioOldCustomer3']:checked").val();
+    if(selectedPaymentType3 == "card"){
+		$("#chequeDetailsDiv3").hide();
+		$("#cardDetailsDiv3").show();
+
+
+		$("#cardType3").attr("required",true);
+		$("#card4digits3").attr("required",true);
+		$("#cardBankName3").attr("required",true);
+		$("#cardRecieptNumber3").attr("required",true);
+
+
+		$("#chequeBankName3").attr("required",false);
+		$("#chequeNumber3").attr("required",false);
+
+	}else if(selectedPaymentType3 == "cheque"){
+		$("#chequeDetailsDiv3").show();
+		$("#cardDetailsDiv3").hide();
+
+		$("#cardType3").attr("required",false);
+		$("#card4digits3").attr("required",false);
+		$("#cardBankName3").attr("required",false);
+		$("#cardRecieptNumber3").attr("required",false);
+
+
+		$("#chequeBankName3").attr("required",true);
+		$("#chequeNumber3").attr("required",true);
+	}
+	else if(selectedPaymentType3 == "cash"){
+		$("#chequeDetailsDiv3").hide();
+		$("#cardDetailsDiv3").hide();
+
+		$("#cardType3").attr("required",false);
+		$("#card4digits3").attr("required",false);
+		$("#cardBankName3").attr("required",false);
+		$("#cardRecieptNumber3").attr("required",false);
+
+
+		$("#chequeBankName3").attr("required",false);
+		$("#chequeNumber3").attr("required",false);
+	}
+});
+
+
+$("input[name='paymentTypeRadioOldCustomer4']").change(function (){
+    var selectedPaymentType4 = $("input[type='radio'][name='paymentTypeRadioOldCustomer4']:checked").val();
+    if(selectedPaymentType4 == "card"){
+		$("#chequeDetailsDiv4").hide();
+		$("#cardDetailsDiv4").show();
+
+
+		$("#cardType4").attr("required",true);
+		$("#card4digits4").attr("required",true);
+		$("#cardBankName4").attr("required",true);
+		$("#cardRecieptNumber4").attr("required",true);
+
+
+		$("#chequeBankName4").attr("required",false);
+		$("#chequeNumber4").attr("required",false);
+
+	}else if(selectedPaymentType4 == "cheque"){
+		$("#chequeDetailsDiv4").show();
+		$("#cardDetailsDiv4").hide();
+
+		$("#cardType4").attr("required",false);
+		$("#card4digits4").attr("required",false);
+		$("#cardBankName4").attr("required",false);
+		$("#cardRecieptNumber4").attr("required",false);
+
+
+		$("#chequeBankName4").attr("required",true);
+		$("#chequeNumber4").attr("required",true);
+	}
+	else if(selectedPaymentType4 == "cash"){
+		$("#chequeDetailsDiv4").hide();
+		$("#cardDetailsDiv4").hide();
+
+		$("#cardType4").attr("required",false);
+		$("#card4digits4").attr("required",false);
+		$("#cardBankName4").attr("required",false);
+		$("#cardRecieptNumber4").attr("required",false);
+
+
+		$("#chequeBankName4").attr("required",false);
+		$("#chequeNumber4").attr("required",false);
+	}
+});
+
+
+
+$('#singlePayRadio').change(function(){
+   // console.log('changed');
+   $('#CustomerType').val("NewCustomer"); 
+   $('#Order-date').css('display','none');
+   $('#Order-date1').css('display','none');
+   $('#Order-date2').css('display','none');
+   $('#Order-date3').css('display','none');
+});
+$('#biPayRadio').change(function(){
+   // console.log('changed');
+     $('#CustomerType').val("NewCustomer");
+     $('#Order-date').css('display','none');
+   $('#Order-date1').css('display','none');
+   $('#Order-date2').css('display','none');
+   $('#Order-date3').css('display','none');
+});
+$('#multiPayRadio').change(function(){
+   // console.log('changed');
+     $('#CustomerType').val("NewCustomer");
+    $('#Order-date').css('display','none');
+   $('#Order-date1').css('display','none');
+   $('#Order-date2').css('display','none');
+   $('#Order-date3').css('display','none');
+});
+
+
+// for introvisit
+
+//$(document).ready(function(){
+//    $.ajax({
+//			type: "POST",
+//			url: "{{URL::to('/quick/season/getSeasonsForEnrollment')}}",
+//                        data: {},
+//			dataType: 'json',
+//			success: function(response){
+//                           // console.log(response.season_data);
+//                            
+//                            $(".SeasonsCbx").empty("");      	  
+//                            string = '';
+//                            for(var i=0;i<response.season_data.length;i++){
+//                                string += '<option value='+response.season_data[i]['id']+'>'+response.season_data[i]['season_name']+'</option>';
+//                            }
+//                            
+//                            $('.SeasonsCbx').append(string); 
+//                            getEligibleClasses();
+//                           // console.log(string);
+//                        }
+//             })  ;
+//});
+$('#SeasonsCbx').change(function(){
+    $.ajax({
+			type: "POST",
+			url: "{{URL::to('/quick/season/getSeasonDataBySeasonId')}}",
+                        data: {'seasonId':$('#SeasonsCbx').val(),},
+			dataType: 'json',
+			success: function(response){
+                            $('#seasonMsgDiv').html("<p class='uk-alert uk-alert-warning'> Season StartDate: "+response.data['start_date']+" End Date: "+response.data['end_date']+"</p>");
+                          //  $('#enrollmentEndDate').val(response.end_date);
+                            //getEligibleClasses();
+                            $('#eligibleClassesCbx').val('');
+                            $('#batch1Msg').html('');
+                            $('#batchCbx').val('');
+                            $('#enrollmentcontinue2').hide();
+                            $('#enrollmentcontinue3').hide();
+                        }
+             }); 
+
+});
+$('#SeasonsCbx2').change(function(){
+    $.ajax({
+			type: "POST",
+			url: "{{URL::to('/quick/season/getSeasonDataBySeasonId')}}",
+                        data: {'seasonId':$('#SeasonsCbx2').val(),},
+			dataType: 'json',
+			success: function(response){
+                            $('#seasonMsgDiv').html("<p class='uk-alert uk-alert-warning'> Season StartDate: "+response.data['start_date']+" End Date: "+response.data['end_date']+"</p>");
+                          //  $('#enrollmentEndDate').val(response.end_date);
+                           $('#eligibleClassesCbx2').val('');
+                           $('#batch2Msg').html('');
+                           $('#enrollmentcontinue3').hide();
+                        }
+             }); 
+
+});
+$('#SeasonsCbx3').change(function(){
+    $.ajax({
+			type: "POST",
+			url: "{{URL::to('/quick/season/getSeasonDataBySeasonId')}}",
+                        data: {'seasonId':$('#SeasonsCbx3').val(),},
+			dataType: 'json',
+			success: function(response){
+                            $('#seasonMsgDiv').html("<p class='uk-alert uk-alert-warning'> Season StartDate: "+response.data['start_date']+" End Date: "+response.data['end_date']+"</p>");
+                          //  $('#enrollmentEndDate').val(response.end_date);
+                           $('#eligibleClassesCbx3').val('');
+                           $('#batchCbx3').html('');
+                           $('#batch3Msg').html('');
+                        }
+             }); 
+
+});
+$('#batchCbx').change(function(){
+
+if($('#enrollmentStartDate').val()!=''){
+$.ajax({
+        type: "POST",
+        url: "{{URL::to('/quick/getBatchRemainingClassesByBatchId')}}",
+        data: {'batchId':$('#batchCbx').val(),'preferredStartDate':$('#enrollmentStartDate').val(),},
+        dataType:"json",
+        success: function (response)
+        {
+            console.log(response);
+            if(response.status=='success'){
+                
+                if(selectedNoOfClass <= response.classCount){
+                    $('#batch1Msg').html('<p class="uk-alert uk-alert-success">ClassNo:'+selectedNoOfClass+'<i class="fa fa-trash" aria-hidden="true"></i></p>');
+                    batch1ClassCost=response.classAmount;
+                    $('#enrollmentcontinue2').hide();
+                    $('#enrollmentcontinue3').hide();
+                    firstselectedNoOfClass=selectedNoOfClass;
+                     $.ajax({
+                            type: "POST",
+                            url: "{{URL::to('/quick/insertEstimateDetails')}}",
+                            data: {'customer_id':{{$student->customer_id}},'student_id':studentId,'season_id':$('#SeasonsCbx').val(),
+                                   'batch_id':$('#batchCbx').val(),'class_id':$('#eligibleClassesCbx').val(),
+                                   'enroll_start_date':response.enrollment_start_date,'enroll_end_date':response.enrollment_end_date,
+                                    'total_selected_classes':selectedNoOfClass,'no_of_available_classes':response.classCount,
+                                    'no_of_opted_classes':selectedNoOfClass,'batch_amount':response.classAmount,'estimate_master_no':estimate_master_no},
+                            dataType: 'json',
+                            success: function(response){
+                                $('#SeasonsCbx').attr('disabled',true);
+                                $('#eligibleClassesCbx').attr('disabled',true);
+                                $('#batchCbx').attr('disabled',true);
+                                estimate_master_no=response.data['estimate_master_no'];
+                                $('#estimate_master_no').val(response.data['estimate_master_no']);
+                                estimate_id1=response.data['id'];
+                                prepareGetClasses();
+                            }
+                        });     
+                                
+                     
+                    //alert('completed');
+                }else{
+                    $('#batch1Msg').html('<p class="uk-alert uk-alert-success">ClassNo:'+response.classCount+'<i class="fa fa-trash" aria-hidden="true"></i></p>');
+                    enddate1=response.lastdate;
+                    firstselectedNoOfClass=response.classCount;
+                    batch1ClassCost=response.classAmount;
+                    // **** age changing after enrollment of batch 1 ****//
+                    
+                    
+                    $('#enrollmentbtnsdisplay1').css('display','block');
+                    $('#GoChangeAge').click(function(){
+                        $.ajax({
+                            type: "POST",
+                            url: "{{URL::to('/quick/insertEstimateDetails')}}",
+                            data: {'customer_id':{{$student->customer_id}},'student_id':studentId,'season_id':$('#SeasonsCbx').val(),
+                                   'batch_id':$('#batchCbx').val(),'class_id':$('#eligibleClassesCbx').val(),
+                                   'enroll_start_date':response.enrollment_start_date,'enroll_end_date':response.enrollment_end_date,
+                                    'total_selected_classes':selectedNoOfClass,'no_of_available_classes':response.classCount,
+                                    'no_of_opted_classes':response.classCount,'batch_amount':response.classAmount,'estimate_master_no':estimate_master_no},
+                            dataType: 'json',
+                            success: function(response){
+                        
+                                getEligibleClassesForBatch2WithAgeChange();
+                                $('#SeasonsCbx').attr('disabled',true);
+                                $('#eligibleClassesCbx').attr('disabled',true);
+                                $('#batchCbx').attr('disabled',true);
+                                estimate_master_no=response.data['estimate_master_no'];
+                                $('#estimate_master_no').val(response.data['estimate_master_no']);
+                                estimate_id1=response.data['id'];
+                            }
+                        });     
+                    });
+                    $('#GoParallelAge').click(function(){
+                        
+                        $.ajax({
+                            type: "POST",
+                            url: "{{URL::to('/quick/insertEstimateDetails')}}",
+                            data: {'customer_id':{{$student->customer_id}},'student_id':studentId,'season_id':$('#SeasonsCbx').val(),
+                                   'batch_id':$('#batchCbx').val(),'class_id':$('#eligibleClassesCbx').val(),
+                                   'enroll_start_date':response.enrollment_start_date,'enroll_end_date':response.enrollment_end_date,
+                                    'total_selected_classes':selectedNoOfClass,'no_of_available_classes':response.classCount,
+                                    'no_of_opted_classes':response.classCount,'batch_amount':response.classAmount,'estimate_master_no':estimate_master_no},
+                            dataType: 'json',
+                            success: function(response){
+                                getEligibleClassesForBatch2WithoutAgeChange();  
+                                $('#SeasonsCbx').attr('disabled',true);
+                                $('#eligibleClassesCbx').attr('disabled',true);
+                                $('#batchCbx').attr('disabled',true);
+                                estimate_master_no=response.data['estimate_master_no'];
+                                $('#estimate_master_no').val(response.data['estimate_master_no']);
+                                estimate_id1=response.data['id'];
+                            }
+                        });  
+                        
+                    });
+                    
+                    //$('#enrollmentcontinue2').show();
+                }
+                $('#eligibleClassesCbx2').val('');
+                $('#batchCbx2').val('');
+                $('batch2Msg').html('');
+                
+                //$('#batch1Msg').html('');
+                
+                 //$('#enrollmentcontinue2').hide();
+                 //$('#enrollmentcontinue3').hide();
+                //$('#MsgDiv').html('<p class="uk-alert uk-alert-success">selected class day:'+response.day+'.</p>');   
+            }else{
+                $('#batch1Msg').html('<p class="uk-alert uk-alert-danger">ClassNo:0</p>');
+            }
+        }
+    });
+}else{
+$('#batch1Msg').html('<p class="uk-alert uk-alert-danger">select date</p>');
+}
+});
+
+
+$('#batchCbx2').change(function(){
+console.log(enddate1);
+$.ajax({
+        type: "POST",
+        url: "{{URL::to('/quick/getBatchRemainingClassesByBatchId')}}",
+        data: {'batchId':$('#batchCbx2').val(),'preferredStartDate':enddate1,},
+        dataType:"json",
+        success: function (response)
+        {
+            console.log(response);
+            if(response.status=='success'){
+                
+                if((selectedNoOfClass-firstselectedNoOfClass)<= response.classCount){
+                    $('#batch2Msg').html('<p class="uk-alert uk-alert-success">ClassNo:'+(selectedNoOfClass-firstselectedNoOfClass)+'<i class="fa fa-trash" aria-hidden="true"></i></p>');
+                    $('#enrollmentcontinue3').hide();
+                    batch2ClassCost=response.classAmount;
+                    secondselectedNoOfClass=(selectedNoOfClass-firstselectedNoOfClass);
+                    $.ajax({
+                            type: "POST",
+                            url: "{{URL::to('/quick/insertEstimateDetails')}}",
+                            data: {'customer_id':{{$student->customer_id}},'student_id':studentId,'season_id':$('#SeasonsCbx2').val(),
+                                   'batch_id':$('#batchCbx2').val(),'class_id':$('#eligibleClassesCbx2').val(),
+                                   'enroll_start_date':response.enrollment_start_date,'enroll_end_date':response.enrollment_end_date,
+                                    'total_selected_classes':selectedNoOfClass,'no_of_available_classes':response.classCount,
+                                    'no_of_opted_classes':(selectedNoOfClass-firstselectedNoOfClass),'batch_amount':response.classAmount,'estimate_master_no':estimate_master_no},
+                            dataType: 'json',
+                            success: function(response){
+                                $('#SeasonsCbx2').attr('disabled',true);
+                                $('#eligibleClassesCbx2').attr('disabled',true);
+                                $('#batchCbx2').attr('disabled',true);
+                                estimate_master_no=response.data['estimate_master_no'];
+                                $('#estimate_master_no').val(response.data['estimate_master_no']);
+                                estimate_id2=response.data['id'];
+                                prepareGetClasses();
+                            }
+                        }); 
+                    //alert('completed');
+                    
+                }else{
+                    $('#batch2Msg').html('<p class="uk-alert uk-alert-success">ClassNo:'+response.classCount+'<i class="fa fa-trash" aria-hidden="true"></i></p>');
+                    //firstselectedNoOfClass=firstselectedNoOfClass+response.classCount
+                    enddate2=response.lastdate;
+                    secondselectedNoOfClass=response.classCount;
+                    batch2ClassCost=response.classAmount;
+                    //selectedNoOfClass=selectedNoOfClass-response.classCount;
+                    if(selectedNoOfClass==0){
+                        alert('completed');
+                    }
+                    $('#enrollmentbtnsdisplay2').css('display','block');
+                    
+                    $('#GoParallelAge2').click(function(){
+                        
+                        $.ajax({
+                            type: "POST",
+                            url: "{{URL::to('/quick/insertEstimateDetails')}}",
+                            data: {'customer_id':{{$student->customer_id}},'student_id':studentId,'season_id':$('#SeasonsCbx2').val(),
+                                   'batch_id':$('#batchCbx2').val(),'class_id':$('#eligibleClassesCbx2').val(),
+                                   'enroll_start_date':response.enrollment_start_date,'enroll_end_date':response.enrollment_end_date,
+                                    'total_selected_classes':selectedNoOfClass,'no_of_available_classes':response.classCount,
+                                    'no_of_opted_classes':response.classCount,'batch_amount':response.classAmount,'estimate_master_no':estimate_master_no},
+                            dataType: 'json',
+                            success: function(response){
+                        
+                                getEligibleClassesForBatch3WithoutAgeChange();
+                                $('#SeasonsCbx2').attr('disabled',true);
+                                $('#eligibleClassesCbx2').attr('disabled',true);
+                                $('#batchCbx2').attr('disabled',true);
+                                estimate_master_no=response.data['estimate_master_no'];
+                                $('#estimate_master_no').val(response.data['estimate_master_no']);
+                                estimate_id2=response.data['id'];
+                            }
+                        });
+                    });
+                    $('#GoChangeAge2').click(function(){
+                        $.ajax({
+                            type: "POST",
+                            url: "{{URL::to('/quick/insertEstimateDetails')}}",
+                            data: {'customer_id':{{$student->customer_id}},'student_id':studentId,'season_id':$('#SeasonsCbx2').val(),
+                                   'batch_id':$('#batchCbx2').val(),'class_id':$('#eligibleClassesCbx2').val(),
+                                   'enroll_start_date':response.enrollment_start_date,'enroll_end_date':response.enrollment_end_date,
+                                    'total_selected_classes':selectedNoOfClass,'no_of_available_classes':response.classCount,
+                                    'no_of_opted_classes':response.classCount,'batch_amount':response.classAmount,'estimate_master_no':estimate_master_no},
+                            dataType: 'json',
+                            success: function(response){
+                        
+                                getEligibleClassesForBatch3WithAgeChange();
+                                $('#SeasonsCbx2').attr('disabled',true);
+                                $('#eligibleClassesCbx2').attr('disabled',true);
+                                $('#batchCbx2').attr('disabled',true);
+                                estimate_master_no=response.data['estimate_master_no'];
+                                $('#estimate_master_no').val(response.data['estimate_master_no']);
+                                estimate_id2=response.data['id'];
+                            }
+                        });
+                        
+                    });
+                   // $('#enrollmentcontinue3').show();
+                }
+                $('#eligibleClassesCbx3').val('');
+                $('#batchCbx3').val('');
+                $('#batch3Msg').html('');
+                //$('#batch2Msg').html('');
+                 //$('#enrollmentcontinue3').hide();
+                //$('#MsgDiv').html('<p class="uk-alert uk-alert-success">selected class day:'+response.day+'.</p>');   
+            }else{
+                $('#batch2Msg').html('<p class="uk-alert uk-alert-danger">ClassNo:0</p>');
+            }
+        }
+    });
+});
+
+$('#batchCbx3').change(function(){
+console.log(enddate2);
+$.ajax({
+        type: "POST",
+        url: "{{URL::to('/quick/getBatchRemainingClassesByBatchId')}}",
+        data: {'batchId':$('#batchCbx3').val(),'preferredStartDate':enddate2},
+        dataType:"json",
+        success: function (response)
+        {
+            console.log(response);
+            if(response.status=='success'){
+                
+                if((selectedNoOfClass-(firstselectedNoOfClass+secondselectedNoOfClass)) <= response.classCount){
+                    $('#batch3Msg').html('<p class="uk-alert uk-alert-success">ClassNo:'+(selectedNoOfClass-(firstselectedNoOfClass+secondselectedNoOfClass))+'</p>');
+                    batch3ClassCost=response.classAmount;
+                    thirdselectedNoOfClass=(selectedNoOfClass-(firstselectedNoOfClass+secondselectedNoOfClass));
+                    $('#enrollmentbtnsdisplay3').css('display','block');
+                    $('#GoEnrollmentConfirm').click(function(){
+                       $.ajax({
+                            type: "POST",
+                            url: "{{URL::to('/quick/insertEstimateDetails')}}",
+                            data: {'customer_id':{{$student->customer_id}},'student_id':studentId,'season_id':$('#SeasonsCbx3').val(),
+                                   'batch_id':$('#batchCbx3').val(),'class_id':$('#eligibleClassesCbx3').val(),
+                                   'enroll_start_date':response.enrollment_start_date,'enroll_end_date':response.enrollment_end_date,
+                                    'total_selected_classes':selectedNoOfClass,'no_of_available_classes':selectedNoOfClass,
+                                    'no_of_opted_classes':thirdselectedNoOfClass,'batch_amount':response.classAmount,'estimate_master_no':estimate_master_no},
+                            dataType: 'json',
+                            success: function(response){
+                        
+                                $('#SeasonsCbx3').attr('disabled',true);
+                                $('#eligibleClassesCbx3').attr('disabled',true);
+                                $('#batchCbx3').attr('disabled',true);
+                                $('#enrollmentbtnsdisplay3').css('display','none');
+                                
+                                estimate_master_no=response.data['estimate_master_no'];
+                                $('#estimate_master_no').val(response.data['estimate_master_no']);
+                                estimate_id3=response.data['id'];
+                                prepareGetClasses();
+                            }
+                        }); 
+                        
+                    });
+        
+                        
+                    
+                    //prepareGetClasses();
+                    //alert('completed');
+                    
+                }else{
+                    $('#batch3Msg').html('<p class="uk-alert uk-alert-success">ClassNo:'+response.classCount+'<i class="fa fa-trash" aria-hidden="true"></i></p>');
+                    enddate3=response.lastdate;
+                    thirdselectedNoOfClass=response.classCount;
+                    batch3ClassCost=response.classAmount;
+                    //selectedNoOfClass=selectedNoOfClass-response.classCount;
+                   // $('#enrollmentcontinue3').show();
+                }
+               // $('#batch3Msg').html('');
+                //$('#MsgDiv').html('<p class="uk-alert uk-alert-success">selected class day:'+response.day+'.</p>');   
+            }else{
+                $('#batch3Msg').html('<p class="uk-alert uk-alert-danger">ClassNo:0</p>');
+            }
+        }
+    });
+});
+function getivdata(ivid){
+    //console.log(ivid);
+    
+    
+    $.ajax({
+			type: "POST",
+			url: "{{URL::to('/quick/getIntrovisitHistory')}}",
+                        data: {'introvisit_id':ivid},
+			dataType: 'json',
+			success: function(response){
+                            //console.log(response);
+                            var data="<table class='uk-table'>"+
+                                    "<thead>"+
+                                    "<tr>"+
+                                    "<th class='uk-text-nowrap'>History Details</th>"+
+                                    "<th class='uk-text-nowrap'>Created Date</th>"+
+                                    "</tr>"+
+                                    "</thead>";
+                           for(var i=0;i<response.status.length;i++){
+                                data+="<tr role='row'>"+"<td>"+response.status[i]['log_text']+"</td><td>"+response.status[i]['created_at']+"</td></tr>";
+                            }
+                            data+="</table>";
+                            //console.log(data);
+                            $('#ivhistorybody').html(data);
+                            $('#ivhistory').modal('show');
+                        }
+             });  
+
+    
+}
+$('#reschedule-date').kendoDatePicker();
+
+$('#iveditSelect').change(function(){
+if ($('#iveditSelect').val()=='RE_SCHEDULE'){    
+    $('#reschedule').css('display','block');
+}else{
+    $('#reschedule').css('display','none');
+}
+});
+
+
+$.urlParam = function(name){
+	var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+	if(results){
+        return results[1];
+        }else{
+        return 0;
+        }
+}
+
+ //for selecting proper div receive payment tab 
+$(document).ready(function(){
+   $('#paymentOptionsReceive_1').change(function(){
+      if($('#paymentOptionsReceive_1').is(":checked")){
+          //console.log('card');
+          $('#receivepayment').removeClass('disabled');
+          $('#receiveCardDetailsDiv').css('display','block');
+          $('#receiveemailEnrollPrintDiv').css('display','block');
+          $('#receiveChequeDetailsDiv').css('display','none');
+          $('#receivecard4digits').attr('required','true');
+          
+      } 
+   });
+   $('#paymentOptionsReceive_2').change(function(){
+      if($('#paymentOptionsReceive_2').is(":checked")){
+         // console.log('cash');
+          $('#receivepayment').removeClass('disabled');
+          $('#receiveemailEnrollPrintDiv').css('display','block');
+          $('#receiveCardDetailsDiv').css('display','none');
+          $('#receiveChequeDetailsDiv').css('display','none');
+      }
+   });
+   $('#paymentOptionsReceive_3').change(function(){
+      if($('#paymentOptionsReceive_3').is(":checked")){
+         // console.log('cheque');
+          $('#receivepayment').removeClass('disabled');
+          $('#receiveCardDetailsDiv').css('display','none');
+          $('#receiveChequeDetailsDiv').css('display','block');
+          $('#receiveemailEnrollPrintDiv').css('display','block');
+      } 
+   });
+});
+
+
+$('#receivedueclose').click(function(){
+   $('#receivedue').modal('hide');
+});
+/*
+$('#receivecard4digits').change(function(){
+    console.log('working');
+   if(($('#receivecardBankName').val()!='') && ($('#receivecardRecieptNumber').val()!='') ){
+      $('#receivepayment').removeClass('disabled'); 
+   } 
+});
+
+$('#receivecardBankName').change(function(){
+   if(($('#receivecard4digits').val()!='') && ($('#receivecardRecieptNumber').val()!='') ){
+      $('#receivepayment').removeClass('disabled'); 
+   } 
+});
+$('#receivecardRecieptNumber').change(function(){
+   if(($('#receivecardBankName').val()!='') && ($('#receivecard4digits').val()!='') ){
+      $('#receivepayment').removeClass('disabled'); 
+   } 
+});
+*/
 </script>
 @stop @section('content')
+
 <div id="breadcrumb">
 	<ul class="crumbs">
 		<li class="first"><a href="{{url()}}" style="z-index: 9;"><span></span>Home</a></li>
@@ -962,10 +2707,11 @@ function ReceivePendingDue(pendingId,pendingAmount,discount){
 				<ul id="user_profile_tabs" class="uk-tab"
 					data-uk-tab="{connect:'#user_profile_tabs_content', animation:'slide-horizontal'}"
 					data-uk-sticky="{ top: 48, media: 960 }">
-					<li class="uk-active"><a href="#about">About</a></li>
-					<li class=""><a href="#introvisit">Intro Visit</a></li>
-					<li class=""><a href="#enrollments">Enrollments</a></li>
-					<li class=""><a href="#payments">Payments</a></li>
+					<li id="aboutTabheading"class="uk-active"><a href="#about">About</a></li>
+					
+					<li id="enrollmentsTabheading"class=""><a href="#enrollments">Enrollments</a></li>
+					<li id="paymentsTabheading"class=""><a href="#payments">Payments</a></li>
+                                        <!--<li id="introvisitTabheading"class=""><a href="#introvisit">Intro Visit</a></li>-->
 				</ul>
 				<ul id="user_profile_tabs_content" class="uk-switcher uk-margin">
 					<li id="introvisitpage">
@@ -1100,148 +2846,78 @@ function ReceivePendingDue(pendingId,pendingAmount,discount){
 							</div>
 					
 					</li>
-
-					<li id="introvisit">
-						<h3>Add Introductory Visit</h3>
-						<div id="introVisitAddMessage"></div> <br clear="all" /> <br
-						clear="all" />
-
-						
-						
-						<form action="" method="post" id="addIntrovisitForm">
-							<div class="uk-grid" data-uk-grid-margin>
-								<input name="studentIdIntroVisit" type="hidden" 
-									value="{{$student->id}}" /> <input name="customerId"
-									type="hidden" id="customerIdAddIntrovisit"
-									value="{{$student->customers->id}}" />
-
-
-
-
-								<div class="uk-width-medium-1-3">
-									<div class="parsley-row">
-										<label for="eligibleClassesCbx">Eligible Classess<span
-											class="req">*</span></label> <select id="eligibleClassIntro"
-											name="eligibleClassesCbx" required
-											class="eligibleClassesCbx form-control input-sm md-input"
-											style="padding: 0px; font-weight: bold; color: #727272; width: 100%">
-											<option value=""></option>
-										</select>
-									</div>
-								</div>
-
-
-
-								<div class="uk-width-medium-1-3">
-									<div class="parsley-row">
-										<label for="introbatchCbx">Batch<span class="req">*</span></label>
-										<select id="introbatchCbx" name="introbatchCbx" required
-											class='form-control input-sm md-input'
-											style="padding: 0px; font-weight: bold; color: #727272;">
-											<option value=""></option>
-										</select>
-									</div>
-								</div>
-								<div class="uk-width-medium-1-3">
-									<div class="parsley-row" style="margin-top: -20px">
-										<label for="introVisitTxtBox">Introductory visit date<span
-											class="req">*</span></label> <br>
-										{{Form::text('introVisitTxtBox',
-										null,array('id'=>'introVisitTxtBox', 'required'=>'', 'class' =>
-										''))}}
-									</div>
-								</div>
-							</div>
-							<br>
-
-
-
-
-							<div class="uk-grid" data-uk-grid-margin>
-								<div class="uk-width-medium-1-1">
-									<div class="parsley-row">
-										<label for="customerCommentTxtarea">Comment<span class="req">*</span></label>
-										{{ Form::textarea('customerCommentTxtarea', null,
-										['id'=>'customerCommentTxtarea', 'size' => '50x2',
-										'class' => 'form-control input-sm md-input']) }}
-									</div>
-									<br>
-								</div>
-							</div>
-							<div class="uk-grid" data-uk-grid-margin>
-								<div class="uk-width-medium-1-2">
-									<div class="parsley-row">
-										<label for="reminderTxtBox">Reminder date<span class="req">*</span></label>
-										{{Form::text('reminderTxtBox',
-										null,array('id'=>'reminderTxtBox',  'class' =>
-										''))}}
-									</div>
-								</div>
-
-							</div>
-							<br clear="all" /> <br clear="all" /> <br clear="all" />
-							<div class="uk-width-medium-1-2">
-								<div class="parsley-row">
-									<button type="submit" class="btn btn-primary"
-										id="addIntroVisitSubmit">Add Introductory Visit</button>
-								</div>
-							</div>
-						</form> 
-						
-						
-						
-						<br clear="all" /> <br clear="all" />
-						<h4 class="heading_c uk-margin-small-bottom">Scheduled
-							Introductory Visits</h4>
-						<ul class="md-list">
-                                         
-                                         	<?php 
-                                         	/* echo '<pre>';                                         	
-                                         	print_r($scheduledIntroVisits);
-                                         	echo '</pre>';   */
-                                         	if(isset($scheduledIntroVisits)){
-	                                         	
-                                         	foreach ($scheduledIntroVisits as $scheduledIntroVisit){?>
-											 <li>
-												<div class="md-list-content">
-													<span class="md-list-heading"> 
-														<a href="#" class="iv" data-ivid="{{$scheduledIntroVisit->id}}">
-															Intro visit scheduled for {{$scheduledIntroVisit->Classes->class_name}} 
-															<?php if(isset($scheduledIntroVisit->Batches) && sizeof($scheduledIntroVisit->Batches) > 0){?>
-															({{$scheduledIntroVisit->Batches->batch_name}})
-															<?php }?>
-														</a>
-														<a href="#" class="btn btn-xs btn-primary ivEdit" data-ivstatus="{{$scheduledIntroVisit->status}}" data-ivid="{{$scheduledIntroVisit->id}}">
-															Edit
-														</a>
-														
-														
-														
-													</span> 
-													<span class="uk-badge uk-badge-success" style="float: left"> 
-														{{date('d M Y',strtotime($scheduledIntroVisit->iv_date))}} 
-													</span>
-													<span class="uk-badge uk-badge-success" style="float: left"> 
-														{{$scheduledIntroVisit->status}}
-													</span>
-												</div>
-											</li>
-											<?php }                           		
-                                         	}
-	                                         ?>
-                                         </ul>
-
-
-
-
-
-
-
-
-					</li>
+                                       
 					<li id="enrollments">
+                                                <h4 class="heading_c uk-margin-small-bottom">Enroll Class</h4>
+                                                <br clear="all" />
+                                                <div class='enrollmentMsg' id='enrollmentMsg'></div>
+                                                    <div class="uk-grid" data-uk-grid-margin>
+                                                        <div class="uk-width-medium-1-4 ">
+                                                            <label>No of Classes</label>
+                                                        </div>
+                                                        <div class="uk-width-medium-1-4 text-center">
+                                                            <label>Discount Percentage</label>
+                                                        </div>
+                                                        <div class="uk-width-medium-1-4 text-center">
+                                                          <!--  <label>Discount Rs</label>-->
+                                                        </div>
+                                                        <div class="uk-width-medium-1-4 text-center">
+                                                        </div>
+                                                        <br clear="all"/>
+                                                        
+                                                        <!-- for discount enrollment -->
+                                                        <?php if(isset($discountEnrollmentData)){?>
+                                                        @for($i = 0; $i < count($discountEnrollmentData); $i++)
+                                                        <div class="uk-width-medium-1-4 ">
+                                                            <input type="radio" name="enrollmentClassesSelect" value="{{$discountEnrollmentData[$i]['number_of_classes']}}" discountPercentage="{{$discountEnrollmentData[$i]['discount_percentage']}}" position="{{$i}}" class="radio-custom" id="radio_demo_inline{{$i}}"/><label for="radio_demo_inline{{$i}}" class="radio-custom-label" >{{$discountEnrollmentData[$i]['number_of_classes']}} </label>
+                                                        </div>
+                                                        <div class="uk-width-medium-1-4 text-center">
+                                                           <label id='discount{{$i}}' value='{{$discountEnrollmentData[$i]['discount_percentage']}}'>{{$discountEnrollmentData[$i]['discount_percentage']}}</label>%
+                                                        </div>
+                                                        <div class="uk-width-medium-1-4 ">
+                                                           <!-- <input type="number" id="discountAmount{{$i}}" class='form-control input-sm md-input text-center' style='padding:0px' value='0'/> 
+                                                           !-->
+                                                        </div>
+                                                        <div class="uk-width-medium-1-4">
+                                                            
+                                                        </div>
+                                                        @endfor
+                                                        <?php } ?>
+                                                        <div class="uk-width-medium-1-4 ">
+                                                            <input type="radio" name="enrollmentClassesSelect" value="custom" class="radio-custom" id="radio_demo_inline_custom"/><label for="radio_demo_inline_custom" class="radio-custom-label" >Custom Class No</label>
+                                                            <br>
+                                                            <input type='number' name='customEnrollmemtNoofClass' id='customEnrollmemtNoofClass' class='form-control input-sm md-input text-center' style='padding:0px;' value='0' />
+                                                        </div>
+                                                        <div class="uk-width-medium-1-4 text-center">
+                                                            <br>
+                                                                    <input type='number' name='customEnrollmemtDiscountPercentage' id='customEnrollmemtDiscountPercentage' class='form-control input-sm md-input text-center' style='padding:0px;margin-top:10px;' value='0' />
+                                                        </div>
+                                                        <div class="uk-width-medium-1-4 text-center">
+                                                            <br>
+                                                            <!--
+                                                                    <input type='number' name='customEnrollmemt' id='customEnrollmemtDiscount' class='form-control input-sm md-input text-center' style='padding:0px;margin-top:10px;' value='0' />
+                                                            -->
+                                                        </div>
+                                                        
+                                                        <div class="uk-width-medium-1-4 text-center">
+                                                        
+                                                <?php 
+                                                    $studentAgeCheck = date_diff(date_create(date('Y-m-d',strtotime($student->student_date_of_birth))), date_create('today'))->y;
+                                                        if($studentAgeCheck <= 12){
+                                                ?>
+                                		
+                                                <a class="md-fab md-fab-accent" id="addEnrollment"
+                                                   style="float: right;" > <i class="material-icons"><!--&#xE03B;--> trending_flat</i>
+                                                </a>
+						<?php }?>
+                                                </div>
+                                                        
+                                            </div>
+                                                
+                                                <hr>
+                                               
 						<h4 class="heading_c uk-margin-small-bottom">Enrolled Classes</h4>
-						<ul class="md-list">
+                                            <ul class="md-list">
                                          	<?php foreach ($studentEnrollments as $enrollment){?>
 	                                         <li>
 								<div class="md-list-content">
@@ -1251,18 +2927,10 @@ function ReceivePendingDue(pendingId,pendingAmount,discount){
 								</div>
 							</li>
 	                                         <?php }?>
-                                         </ul>
+                                            </ul>
                                          	
                                          
-                                        <?php 
-                                        $studentAgeCheck = date_diff(date_create(date('Y-m-d',strtotime($student->student_date_of_birth))), date_create('today'))->y;
-                                        if($studentAgeCheck <= 12){
-                                        ?>
-                                		
-										<a class="md-fab md-fab-accent" id="addEnrollment"
-						style="float: right;"> <i class="material-icons">&#xE03B;</i>
-					</a>
-										<?php }?>
+                                        
                                 </li>
 					<li id="payments">
 
@@ -1377,11 +3045,10 @@ function ReceivePendingDue(pendingId,pendingAmount,discount){
                                                                                                                                                 <a id='Receive_due_enrollment'  class="btn btn-primary btn-xs" onclick="ReceivePendingDue({{$order_due_data[$i]['id']}},{{$order_due_data[$i]['payment_due_amount']}},{{$order_due_data[$i]['discount_applied']}})">Receive</a>
                                                                                                                                             </td>
                                                                                                              
-                                                                                                                                            
                                                                                                                                         </tr>
                                                                                                                                      <?php }} ?>
                                                                                                                                            <?php if(!isset($order_due_data[0])){?>
-                                                                                                                                         <tr><td>------Not Enrolled to any class------- </td></tr>
+                                                                                                                                         <tr><td>------Not Dues found------- </td></tr>
                                                                                                                                     <?php }?>
                                                                                                                                 </tbody>
                                                                                                                          </table>
@@ -1393,6 +3060,7 @@ function ReceivePendingDue(pendingId,pendingAmount,discount){
                                                                                             </div>
                                                                     </ul>  
 					</li>
+                                        
 					<li id="birthdays">
 
 						<h3 class="heading_c uk-margin-small-bottom">Birthdays</h3> <br
@@ -1462,6 +3130,8 @@ function ReceivePendingDue(pendingId,pendingAmount,discount){
 			<form id="enrollKidForm" method="post"
 				action="{{url()}}/quick/enrollkid">
 				<div class="modal-body">
+                                        <div id="seasonMsgDiv"></div>
+                                        <div id='MsgDiv'></div>
 					<div id="messageStudentEnrollmentDiv"></div>
 					<div id="KidsformBody">
 						<input type="hidden" name="discountOnLastInstallment" id="discountOnLastInstallment" value="no"/>
@@ -1470,10 +3140,68 @@ function ReceivePendingDue(pendingId,pendingAmount,discount){
 							type="hidden" value="{{$student->customers->id}}" /> <input
 							id="selectedSessions" name="selectedSessions" type="hidden"
 							value="" />
-						<div class="uk-grid" data-uk-grid-margin>
-							<div class="uk-width-medium-1-4">
+                                                        <input type="hidden" name="noOfBatchesUsed" id="noOfBatchesUsed" value=""/>
+                                                        <input type="hidden" name="bipaybatch1availablesession" value=""/>
+                                                        <input type="hidden" name="bipaybatch2availablesession" value=""/>
+                                                        <input type="hidden" name="bipaybatch3availablesession" value=""/>
+                                                        <input type="hidden" id="estimate_master_no" name="estimate_master_no" value=""/>
+                                                <div class="uk-grid" data-uk-grid-margin>
+                                                    <!--<div class="uk-width-medium-1-3">
 								<div class="parsley-row">
-									<label for="eligibleClassesCbx">Eligible Classess<span
+									<label for="SeasonsCbx">Seasons<span
+										class="req">*</span></label>
+                                                                        <select id="SeasonsCbx"
+										name="SeasonsCbx" required
+										class='SeasonsCbx form-control input-sm md-input'
+										style="padding: 0px; font-weight: bold; color: #727272;">
+										
+									</select>
+                                                                        
+								</div>
+							</div>
+                                                    -->
+                                                    <div class="uk-width-medium-1-3">
+                                                            <div class="parsley-row" style="margin-top: -23px;">
+									<label for="enrollmentStartDate">Preferred Start date<span
+                                                                                class="req">*</span></label>
+									{{Form::text('enrollmentStartDate',
+									null,array('id'=>'enrollmentStartDate', 'required'=>'','class' =>
+									'uk-form-width-medium'))}}
+
+                                                        
+                                                            </div>
+                                                    </div>
+                                                    <div class="uk-width-medium-1-3">
+                                                            <div class="parsley-row">
+                                                            </div>
+                                                    </div>
+                                                    <div class="uk-width-medium-1-3">
+                                                            <div class="parsley-row">
+								
+                                                            </div>
+                                                    </div>
+                                                    
+                                                    
+                                                </div>
+						<div class="uk-grid" data-uk-grid-margin>
+							
+                                                        
+                                                        <div class="uk-width-medium-1-4">
+								<div class="parsley-row">
+									<label for="SeasonsCbx">Seasons<span
+										class="req">*</span></label>
+                                                                        <select id="SeasonsCbx"
+										name="SeasonsCbx" required
+										class='SeasonsCbx form-control input-sm md-input'
+										style="padding: 0px; font-weight: bold; color: #727272;">
+										
+									</select>
+                                                                        
+								</div>
+							</div>
+                                                        <div class="uk-width-medium-1-4">
+								<div class="parsley-row">
+									<label for="eligibleClassesCbx">Eligible Classes<span
 										class="req">*</span></label> <select id="eligibleClassesCbx"
 										name="eligibleClassesCbx" required
 										class='eligibleClassesCbx form-control input-sm md-input'
@@ -1492,25 +3220,133 @@ function ReceivePendingDue(pendingId,pendingAmount,discount){
 									</select>
 								</div>
 							</div>
-							<div class="uk-width-medium-1-4" id="">
-								<div class="parsley-row" style="margin-top: -23px;">
-									<label for="enrollmentStartDate">Preferred Start date<span
-										class="req">*</span></label><br>
-									{{Form::text('enrollmentStartDate',
-									null,array('id'=>'enrollmentStartDate', 'required'=>'','class' =>
-									'uk-form-width-medium'))}}
-
-								</div>
-							</div>
-							<div class="uk-width-medium-1-4" id="">
-								<div class="parsley-row" style="margin-top: -23px;">
-									<label for="enrollmentEndDate">Preferred End date<span class="req">*</span></label><br>
-									{{Form::text('enrollmentEndDate', null,array('id'=>'enrollmentEndDate', 'required'=>'', 'class' => 'uk-form-width-medium'))}}
-								</div>
-							</div>
+                                                    <div class="uk-width-medium-1-4">
+                                                        <div class="parsley-row" id='batch1Msg'>
+                                                            
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    
+                                                    
 
 						</div>
-						<br clear="all" />
+                                                <div class="uk-grid" data-uk-grid-margin id='enrollmentbtnsdisplay1' style="display:none">
+                                                    <div class="uk-width-medium-1-2">
+                                                        <div class="parsley-row">
+                                                            <button type="button" class="btn btn-sm uk-alert uk-alert-info pull-right" id="GoChangeAge" style="display: inline-block;">Change Age</button>
+                                                        </div>
+                                                    </div>
+                                                    <div class="uk-width-medium-1-2">
+                                                        <div class="parsley-row">
+                                                            <button type="button" class="btn btn-sm uk-alert uk-alert-info" id="GoParallelAge" style="display: inline-block;"> Parallel Age</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                        
+                                                
+                                                <div class="uk-grid" data-uk-grid-margin id='enrollmentcontinue2'>
+                                                    <div class="uk-width-medium-1-4">
+								<div class="parsley-row">
+									<label for="SeasonsCbx2">Seasons<span
+										class="req">*</span></label>
+                                                                        <select id="SeasonsCbx2"
+										name="SeasonsCbx2" required
+										class='SeasonsCbx2 form-control input-sm md-input'
+										style="padding: 0px; font-weight: bold; color: #727272;">
+										
+									</select>
+                                                                        
+								</div>
+                                                    </div>
+                                                    <div class="uk-width-medium-1-4">
+								<div class="parsley-row">
+									<label for="eligibleClassesCbx2">Eligible Classes<span
+										class="req">*</span></label> <select id="eligibleClassesCbx2"
+										name="eligibleClassesCbx2" required
+										class='eligibleClassesCbx2 form-control input-sm md-input'
+										style="padding: 0px; font-weight: bold; color: #727272;">
+										<option value=""></option>
+									</select>
+								</div>
+                                                    </div>
+                                                    <div class="uk-width-medium-1-4">
+                                                        <div class="parsley-row">
+                                                            <label for="hobbies">Batch<span class="req">*</span></label> <select
+										id="batchCbx2" name="batchCbx2" required
+										class='form-control input-sm md-input'
+										style="padding: 0px; font-weight: bold; color: #727272;">
+										<option value=""></option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="uk-width-medium-1-4">
+                                                        <div class="parsley-row" id='batch2Msg'>
+                                                            
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="uk-grid" data-uk-grid-margin id='enrollmentbtnsdisplay2' style="display:none;">
+                                                    <div class="uk-width-medium-1-2">
+                                                        <div class="parsley-row">
+                                                            <button type="button" class="btn btn-sm uk-alert uk-alert-info pull-right" id="GoChangeAge2" style="display: inline-block;">Change Age</button>
+                                                        </div>
+                                                    </div>
+                                                    <div class="uk-width-medium-1-2">
+                                                        <div class="parsley-row">
+                                                            <button type="button" class="btn btn-sm uk-alert uk-alert-info" id="GoParallelAge2" style="display: inline-block;">Parallel Age</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                        
+                                                <div class="uk-grid" data-uk-grid-margin id='enrollmentcontinue3'>
+                                                    <div class="uk-width-medium-1-4">
+								<div class="parsley-row">
+									<label for="SeasonsCbx3">Seasons<span
+										class="req">*</span></label>
+                                                                        <select id="SeasonsCbx3"
+										name="SeasonsCbx3" required
+										class='SeasonsCbx3 form-control input-sm md-input'
+										style="padding: 0px; font-weight: bold; color: #727272;">
+										
+									</select>
+                                                                        
+								</div>
+                                                    </div>
+                                                    <div class="uk-width-medium-1-4">
+								<div class="parsley-row">
+									<label for="eligibleClassesCbx3">Eligible Classes<span
+										class="req">*</span></label> <select id="eligibleClassesCbx3"
+										name="eligibleClassesCbx3" required
+										class='eligibleClassesCbx3 form-control input-sm md-input'
+										style="padding: 0px; font-weight: bold; color: #727272;">
+										<option value=""></option>
+									</select>
+								</div>
+                                                    </div>
+                                                    <div class="uk-width-medium-1-4">
+                                                        <div class="parsley-row">
+                                                            <label for="hobbies">Batch<span class="req">*</span></label> <select
+										id="batchCbx3" name="batchCbx3" required
+										class='form-control input-sm md-input'
+										style="padding: 0px; font-weight: bold; color: #727272;">
+										<option value=""></option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="uk-width-medium-1-4">
+                                                        <div class="parsley-row" id='batch3Msg'>
+                                                            
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="uk-grid" data-uk-grid-margin id='enrollmentbtnsdisplay3' style="display:none">
+                                                    <div class="uk-width-medium-1-1">
+                                                        <div class="parsley-row" style="text-align: center;">
+                                                            <button type="button"  class="btn btn-sm uk-alert uk-alert-info" id="GoEnrollmentConfirm" style="display: inline-block;">ConfirmThirdBatch</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
 						<table id="sessionsTable" class="uk-table">
 							<!-- <caption>Table caption</caption> -->
 							<thead>
@@ -1596,8 +3432,30 @@ function ReceivePendingDue(pendingId,pendingAmount,discount){
 
 
 						<div id="finalPaymentDiv">
-
-
+                                                    <br clear="all">
+                                                        <div class="uk-grid" data-uk-grid-margin>
+                                                            <div class="uk-width-medium-1-3">
+                                                                
+                                                            </div>
+                                                             <div class="uk-width-medium-1-3">
+                                                                
+                                                            </div>
+                                                                <div class="uk-width-medium-1-3">
+                                                                    <div class="parsley-row">
+									<label for="CustomerType">Customer type<span
+										class="req">*</span></label>
+                                                                        <select id="CustomerType"
+										name="CustomerType" required
+										class='CustomeType form-control input-sm md-input'
+										style="padding: 0px; font-weight: bold; color: #727272; float:right;">
+										
+                                                                    	
+                                                                        <option value="NewCustomer">New Customer</option>
+                                                                        <option value="OldCustomer">Old Customer</option>
+                                                                        </select>
+                                                                    </div>
+                                                                </div>
+                                                        </div>
 							<table id="paymentTable"
 								class="uk-table table-striped table-condensed">
 								<!-- <caption>Table caption</caption> -->
@@ -1641,7 +3499,8 @@ function ReceivePendingDue(pendingId,pendingAmount,discount){
 									<?php }?>
 									<tr>
 										<td colspan="2" style="text-align: right; font-weight: bold">
-										<select name="discountPercentage" id="discountPercentage" class="input-sm md-input"
+                                                                                <!--
+										<select type="hidden" name="discountPercentage" id="discountPercentage" class="input-sm md-input"
 												style='padding: 0px; font-weight: bold; color: #727272; width:50%; float:right'>
 											<option value="0">Select discount percentage</option>
 											<option value="10">10%  discount</option>
@@ -1652,15 +3511,35 @@ function ReceivePendingDue(pendingId,pendingAmount,discount){
 										</select>
 										<span id="discountText">
 										
-										</span></td>
+										</span>
+                                                                                -->
+                                                                                <div id="discount"></div>
+                                                                                
+                                                                                </td>
 										<td><input style="font-weight: bold" type="text"
 											name="discountTextBox" id="discountTextBox" readonly value=""
 											class="form-control input-sm md-input" />
-											<!-- <input type="hidden" name="discountPercentage" id="discountPercentage" value=""/> -->
-											
+											<input type="hidden" name="discountPercentage" id="discountPercentage" value=""/> 
+                                                                                        
 											
 										</td>
 									</tr>
+                                                                        <tr>
+                                                                            <td colspan="2" style="text-align: right; font-weight: bold"><div id="second_child_discount"><p>Sibling Consideration:0%</p></div></td>
+                                                                            <td><input style="font-weight: bold" type="text"
+											name="second_child_amount" id="second_child_amount" readonly value="0"
+											class="form-control input-sm md-input" />
+											
+                                                                            </td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td colspan="2" style="text-align: right; font-weight: bold"><div id="second_class_discount"><p>Multi Classes:0%</p></div></td>
+                                                                            <td><input style="font-weight: bold" type="text"
+											name="second_class_amount" id="second_class_amount" readonly value="0"
+											class="form-control input-sm md-input" />
+											
+                                                                            </td>
+                                                                        </tr>
 									<tr>
 										<td colspan="2" style="text-align: right; font-weight: bold">Subtotal</td>
 										<td><input style="font-weight: bold" type="text"
@@ -1702,7 +3581,24 @@ function ReceivePendingDue(pendingId,pendingAmount,discount){
 
 									</div>
 								</div>
+                                                                <div class="uk-width-medium-1-3">
+                                                                    <div class="parsley-row" id="Order-date" style="display: none;">
+                                                                        <label for="OrderDate">Order date<span
+										class="req">*</span></label><br>
+									{{Form::text('OrderDate',
+									null,array('id'=>'OrderDate', 'required'=>'','class' =>
+									'uk-form-width-medium'))}}
+                                                                    </div>
+                                                                </div>
+                                                            
+                                                                <div class="uk-width-medium-1-3">
+                                                                    <div class="parsley-row Order-Date"  style="display: none;">
+                                                                       
+                                                                    </div>
+                                                                </div>
 							</div>
+                                                        
+                                                    
 							<div id="paymentType" style="width: 100%">
 								<div id="cardDetailsDiv" class="uk-grid" data-uk-grid-margin>
 									<div class="uk-width-medium-1-1">
@@ -1717,7 +3613,7 @@ function ReceivePendingDue(pendingId,pendingAmount,discount){
 												<option value="master">Master card</option>
 												<option value="maestro">Maestro</option>
 												<option value="visa">Visa</option>
-												<option value="visa">Rupay</option>
+												<option value="Rupay">Rupay</option>
 											</select>
 										</div>
 									</div>
@@ -1735,7 +3631,7 @@ function ReceivePendingDue(pendingId,pendingAmount,discount){
 										<div class="parsley-row">
 											<label for="cardBankName" class="inline-label">Bank Name of your card<span class="req">*</span>
 											</label> <input id="cardBankName" number name="cardBankName"
-												maxlength="4" type="text"
+												 type="text"
 												class="form-control input-sm md-input" />
 										</div>
 									</div>
@@ -1774,8 +3670,351 @@ function ReceivePendingDue(pendingId,pendingAmount,discount){
 										</div>
 									</div>
 								</div>
-								
-								
+                                                            </div>
+							
+                                                           <!-- id="paymentType2" for old customer 2nd order box -->
+                                                            
+                                                            <div  id="Order-date2" class="uk-grid" data-uk-grid-margin>
+								<div class="uk-width-medium-1-3" >
+									<div class="parsley-row Order-Date2" style="display:none">
+										<input type="radio" name="paymentTypeRadioOldCustomer2" required
+											id="paymentOptionsOldCustomer_1" value="card" /> <label
+											for="paymentOptionsOldCustomer_1" class="inline-label">Card</label> <input
+											type="radio" name="paymentTypeRadioOldCustomer2" id="paymentOptionsOldCustomer_2"
+											value="cash" /> <label for="paymentOptionsOldCustomer_2"
+											class="inline-label">Cash</label> <input type="radio"
+											name="paymentTypeRadioOldCustomer2" id="paymentOptionsOldCustomer_3" value="cheque" />
+										<label for="paymentOptionsOldCustomer_3" class="inline-label">Cheque</label>
+
+									</div>
+								</div>
+                                                                <div class="uk-width-medium-1-3">
+                                                                    <div class="parsley-row Order-Date2"  style="display: none;">
+                                                                       <label for="OrderDate2">Order date<span
+										class="req">*</span></label><br>
+									{{Form::text('OrderDate2',
+									null,array('id'=>'OrderDate2', 'required'=>'','class' =>
+									'uk-form-width-medium'))}}
+                                                                    </div>
+                                                                  </div>
+                                                            
+                                                                <div class="uk-width-medium-1-3">
+                                                                    <div class="parsley-row Order-Date2"  style="display: none;">
+                                                                       
+                                                                    </div>
+                                                                </div>
+							</div>
+                                                        
+                                                    
+							<div  id="paymentType2" style="width: 100%; display:none">
+                                                                <div  class="uk-grid" data-uk-grid-margin id="cardDetailsDiv2">
+                                                                    <div class="uk-width-medium-1-1" >
+										<h4>Card details</h4>
+									</div>
+									<div class="uk-width-medium-1-2">
+										<div class="parsley-row">
+											<select name="cardType2" id="cardType2"
+												class="input-sm md-input"
+												class="form-control input-sm md-input"
+												style='padding: 0px; font-weight: bold; color: #727272;'>
+												<option value="master">Master card</option>
+												<option value="maestro">Maestro</option>
+												<option value="visa">Visa</option>
+												<option value="Rupay">Rupay</option>
+											</select>
+										</div>
+									</div>
+									<div class="uk-width-medium-1-2">
+										<div class="parsley-row">
+											<label for="card4digits2" class="inline-label">Last 4 digits
+												of your card<span class="req">*</span>
+											</label> <input id="card4digits2" number name="card4digits2"
+												maxlength="4" type="text"
+												class="form-control input-sm md-input" />
+										</div>
+									</div>
+									
+									<div class="uk-width-medium-1-2">
+										<div class="parsley-row">
+											<label for="cardBankName2" class="inline-label">Bank Name of your card<span class="req">*</span>
+											</label> <input id="cardBankName2" number name="cardBankName2"
+												 type="text"
+												class="form-control input-sm md-input" />
+										</div>
+									</div>
+									
+									<div class="uk-width-medium-1-2">
+										<div class="parsley-row">
+											<label for="cardRecieptNumber2" class="inline-label">Reciept number<span class="req">*</span>
+											</label> <input id="cardRecieptNumber2" number name="cardRecieptNumber2"
+												maxlength="4" type="text" 
+												class="form-control input-sm md-input" />
+										</div>
+									</div>
+
+								</div>
+								<div id="chequeDetailsDiv2" class="uk-grid" data-uk-grid-margin>
+
+									<div class="uk-width-medium-1-1">
+										<h4>Cheque details</h4>
+										<br clear="all"/>
+									</div>
+									<br clear="all"/><br clear="all"/>
+									<div class="uk-width-medium-1-2">
+										<div class="parsley-row">
+											<label for="chequeBankName2" class="inline-label">Bank name<span
+												class="req">*</span></label> <input id="chequeBankName2"
+												name="bankName2" type="text"
+												class="form-control input-sm md-input" />
+										</div>
+									</div>
+									<div class="uk-width-medium-1-2">
+										<div class="parsley-row">
+											<label for="chequeNumber2" class="inline-label">Cheque number<span
+												class="req">*</span></label> <input id="chequeNumber2"
+												name="chequeNumber2" type="text"
+												class="form-control input-sm md-input" />
+										</div>
+									</div>
+								</div>
+                                                            
+                                                            </div>
+                                                            
+                                                            <!-- id="paymentType3" for old customer 3rd order box -->
+                                                            
+                                                            <div  id="Order-date3" class="uk-grid" data-uk-grid-margin>
+                                                                
+								<div class="uk-width-medium-1-3" >
+									<div class="parsley-row Order-Date3" style="display:none">
+										<input type="radio" name="paymentTypeRadioOldCustomer3" required
+											id="paymentOptionsOldCustomer3_1" value="card" /> <label
+											for="paymentOptionsOldCustomer3_1" class="inline-label">Card</label> <input
+											type="radio" name="paymentTypeRadioOldCustomer3" id="paymentOptionsOldCustomer3_2"
+											value="cash" /> <label for="paymentOptionsOldCustomer3_2"
+											class="inline-label">Cash</label> <input type="radio"
+											name="paymentTypeRadioOldCustomer3" id="paymentOptionsOldCustomer3_3" value="cheque" />
+										<label for="paymentOptionsOldCustomer3_3" class="inline-label">Cheque</label>
+
+									</div>
+								</div> 
+                                                                
+                                                                <div class="uk-width-medium-1-3">
+                                                                    <div class="parsley-row Order-Date3"  style="display: none;">
+                                                                       <label for="OrderDate3">Order date<span
+										class="req">*</span></label><br>
+									{{Form::text('OrderDate3',
+									null,array('id'=>'OrderDate3', 'required'=>'','class' =>
+									'uk-form-width-medium'))}}
+                                                                    </div>
+                                                                  </div>
+                                                                
+                                                                <div class="uk-width-medium-1-3">
+                                                                    <div class="parsley-row Order-Date3"  style="display: none;">
+                                                                       
+                                                                    </div>
+                                                                </div>
+                                                                
+							</div>
+                                                        
+                                                       
+							<div  id="paymentType3" style="width: 100%; display:none">
+                                                            
+                                                                <div  class="uk-grid" data-uk-grid-margin id="cardDetailsDiv3">
+                                                                    <div class="uk-width-medium-1-1" >
+										<h4>Card details</h4>
+									</div>
+									<div class="uk-width-medium-1-2">
+										<div class="parsley-row">
+											<select name="cardType3" id="cardType3"
+												class="input-sm md-input"
+												class="form-control input-sm md-input"
+												style='padding: 0px; font-weight: bold; color: #727272;'>
+												<option value="master">Master card</option>
+												<option value="maestro">Maestro</option>
+												<option value="visa">Visa</option>
+												<option value="Rupay">Rupay</option>
+											</select>
+										</div>
+									</div>
+									<div class="uk-width-medium-1-2">
+										<div class="parsley-row">
+											<label for="card4digits3" class="inline-label">Last 4 digits
+												of your card<span class="req">*</span>
+											</label> <input id="card4digits3" number name="card4digits3"
+												maxlength="4" type="text"
+												class="form-control input-sm md-input" />
+										</div>
+									</div>
+									
+									<div class="uk-width-medium-1-2">
+										<div class="parsley-row">
+											<label for="cardBankName3" class="inline-label">Bank Name of your card<span class="req">*</span>
+											</label> <input id="cardBankName3" number name="cardBankName3"
+												 type="text"
+												class="form-control input-sm md-input" />
+										</div>
+									</div>
+									
+									<div class="uk-width-medium-1-2">
+										<div class="parsley-row">
+											<label for="cardRecieptNumber3" class="inline-label">Reciept number<span class="req">*</span>
+											</label> <input id="cardRecieptNumber3" number name="cardRecieptNumber3"
+												maxlength="4" type="text" 
+												class="form-control input-sm md-input" />
+										</div>
+									</div>
+
+								</div>
+                                                                
+                                                                
+								<div id="chequeDetailsDiv3" class="uk-grid" data-uk-grid-margin>
+                                                                        
+									<div class="uk-width-medium-1-1">
+										<h4>Cheque details</h4>
+										<br clear="all"/>
+									</div>
+                                                                       
+									<br clear="all"/><br clear="all"/>
+									<div class="uk-width-medium-1-2">
+										<div class="parsley-row">
+											<label for="chequeBankName3" class="inline-label">Bank name<span
+												class="req">*</span></label> <input id="chequeBankName3"
+												name="bankName3" type="text"
+												class="form-control input-sm md-input" />
+										</div>
+									</div>
+									<div class="uk-width-medium-1-2">
+										<div class="parsley-row">
+											<label for="chequeNumber3" class="inline-label">Cheque number<span
+												class="req">*</span></label> <input id="chequeNumber3"
+												name="chequeNumber3" type="text"
+												class="form-control input-sm md-input" />
+										</div>
+									</div>
+                                                                       
+								</div>
+                                                                
+                                                            </div>
+                                                            
+                                                            
+                                                             
+                                                        <!--  for old customer 4th order box -->
+                                                            
+                                                            <div  id="Order-date4" class="uk-grid" data-uk-grid-margin>
+								<div class="uk-width-medium-1-3" >
+									<div class="parsley-row Order-Date4" style="display:none">
+										<input type="radio" name="paymentTypeRadioOldCustomer4" required
+											id="paymentOptionsOldCustomer4_1" value="card" /> <label
+											for="paymentOptionsOldCustomer4_1" class="inline-label">Card</label> <input
+											type="radio" name="paymentTypeRadioOldCustomer4" id="paymentOptionsOldCustomer4_2"
+											value="cash" /> <label for="paymentOptionsOldCustomer4_2"
+											class="inline-label">Cash</label> <input type="radio"
+											name="paymentTypeRadioOldCustomer4" id="paymentOptionsOldCustomer4_3" value="cheque" />
+										<label for="paymentOptionsOldCustomer4_3" class="inline-label">Cheque</label>
+
+									</div>
+								</div>
+                                                                <div class="uk-width-medium-1-3">
+                                                                    <div class="parsley-row Order-Date4"  style="display: none;">
+                                                                       <label for="OrderDate4">Order date<span
+										class="req">*</span></label><br>
+									{{Form::text('OrderDate4',
+									null,array('id'=>'OrderDate4', 'required'=>'','class' =>
+									'uk-form-width-medium'))}}
+                                                                    </div>
+                                                                  </div>
+                                                            
+                                                                <div class="uk-width-medium-1-3">
+                                                                    <div class="parsley-row Order-Date4"  style="display: none;">
+                                                                       
+                                                                    </div>
+                                                                </div>
+							</div>
+                                                        
+                                                    
+							<div  id="paymentType4" style="width: 100%; display:none">
+                                                                <div  class="uk-grid" data-uk-grid-margin id="cardDetailsDiv4">
+                                                                    <div class="uk-width-medium-1-1" >
+										<h4>Card details</h4>
+									</div>
+									<div class="uk-width-medium-1-2">
+										<div class="parsley-row">
+											<select name="cardType4" id="cardType4"
+												class="input-sm md-input"
+												class="form-control input-sm md-input"
+												style='padding: 0px; font-weight: bold; color: #727272;'>
+												<option value="master">Master card</option>
+												<option value="maestro">Maestro</option>
+												<option value="visa">Visa</option>
+												<option value="Rupay">Rupay</option>
+											</select>
+										</div>
+									</div>
+									<div class="uk-width-medium-1-2">
+										<div class="parsley-row">
+											<label for="card4digits4" class="inline-label">Last 4 digits
+												of your card<span class="req">*</span>
+											</label> <input id="card4digits4" number name="card4digits4"
+												maxlength="4" type="text"
+												class="form-control input-sm md-input" />
+										</div>
+									</div>
+									
+									<div class="uk-width-medium-1-2">
+										<div class="parsley-row">
+											<label for="cardBankName4" class="inline-label">Bank Name of your card<span class="req">*</span>
+											</label> <input id="cardBankName4" number name="cardBankName4"
+												 type="text"
+												class="form-control input-sm md-input" />
+										</div>
+									</div>
+									
+									<div class="uk-width-medium-1-2">
+										<div class="parsley-row">
+											<label for="cardRecieptNumber4" class="inline-label">Reciept number<span class="req">*</span>
+											</label> <input id="cardRecieptNumber4" number name="cardRecieptNumber4"
+												maxlength="4" type="text" 
+												class="form-control input-sm md-input" />
+										</div>
+									</div>
+
+								</div>
+								<div id="chequeDetailsDiv4" class="uk-grid" data-uk-grid-margin>
+
+									<div class="uk-width-medium-1-1">
+										<h4>Cheque details</h4>
+										<br clear="all"/>
+									</div>
+									<br clear="all"/><br clear="all"/>
+									<div class="uk-width-medium-1-2">
+										<div class="parsley-row">
+											<label for="chequeBankName4" class="inline-label">Bank name<span
+												class="req">*</span></label> <input id="chequeBankName4"
+												name="bankName4" type="text"
+												class="form-control input-sm md-input" />
+										</div>
+									</div>
+									<div class="uk-width-medium-1-2">
+										<div class="parsley-row">
+											<label for="chequeNumber4" class="inline-label">Cheque number<span
+												class="req">*</span></label> <input id="chequeNumber4"
+												name="chequeNumber4" type="text"
+												class="form-control input-sm md-input" />
+										</div>
+									</div>
+								</div>
+                                                            </div>
+                                                            
+                                                            
+                                                            
+                                                             
+                                                            
+                                                        
+                                                            
+                                                            
+                                                                    
+                                                            
+                                                                <!-- for invoice -->
 								<div id="emailEnrollPrintDiv" class="uk-grid" data-uk-grid-margin>
 
 									<div class="uk-width-medium-1-1">
@@ -1800,7 +4039,7 @@ function ReceivePendingDue(pendingId,pendingAmount,discount){
 
 							</div>
 
-
+                                                        
 
 
 
@@ -1815,7 +4054,7 @@ function ReceivePendingDue(pendingId,pendingAmount,discount){
 
 
 
-					</div>
+					
 				</div>
 				<div class="modal-footer">
 					<!-- <button type="button" class="btn btn-default" id="getSchedulesSessions" >Fetch Number of sessions</button> -->
@@ -1889,10 +4128,24 @@ function ReceivePendingDue(pendingId,pendingAmount,discount){
 								<option value="ATTENDED">Attended</option>
 								<option value="NO_SHOW">No show</option>
 								<option value="IN_ACTIVE">In active</option>
+                                                                <option value="RE_SCHEDULE">Re Schedule</option>
 							</select>
 						</div>
 					</div>
 					 <br clear="all" /> <br clear="all" />
+                                         <div class="uk-grid" data-uk-grid-margin>
+                                         <div class="uk-width-medium-1-3">
+                                                                    <div class="parsley-row" id="reschedule" style="margin-top: -20px;display: none;">
+										<label for="reschedule-date">Reschedule-date<span
+											class="req">*</span></label> <br>
+										{{Form::text('reschedule-date',
+										null,array('id'=>'reschedule-date', 'required'=>'', 'class' =>
+										''))}}
+							            </div>
+                                         </div>
+                                             <div class="uk-width-medium-1-3"></div>
+                                             <div class="uk-width-medium-1-3"></div>
+                                         </div>
 					<div class="uk-grid" data-uk-grid-margin>
 						<div class="uk-width-medium-1-1">
 							<div class="parsley-row">
@@ -1932,7 +4185,7 @@ function ReceivePendingDue(pendingId,pendingAmount,discount){
 			<div class="modal-header">
 				<button type="button" class="close" data-dismiss="modal">&times;</button>
 				<h4 class="modal-title">
-					Edit Kids(<span id="kidNameInPopup"></span>)
+					Edit Kids<span id="kidNameInPopup"></span>
 				</h4>
 			</div>
 			<div class="modal-body">
@@ -1950,16 +4203,16 @@ function ReceivePendingDue(pendingId,pendingAmount,discount){
 						</div>
 						<div class="uk-width-medium-1-3">
 							<div class="parsley-row">
-								<label for="nickname">Nickname<span class="req">*</span></label>
+								<label for="nickname">Nickname</label>
 								{{Form::text('nickname', null,array('id'=>'nickname',
-								'required', 'class' => 'form-control input-sm md-input'))}}
+								'class' => 'form-control input-sm md-input'))}}
 							</div>
 						</div>
 						<div class="uk-width-medium-1-3">
 							<div class="parsley-row">
-								<label for="studentDob">Date of birth<span class="req">*</span></label>
+								<label for="studentDob">Date of birth</label>
 								{{Form::text('studentDob',
-								null,array('id'=>'studentDob','required', 'class' => ''))}}
+								null,array('id'=>'studentDob', 'class' => '','required'))}}
 							</div>
 						</div>
 					</div>
@@ -1968,7 +4221,7 @@ function ReceivePendingDue(pendingId,pendingAmount,discount){
 					<div class="uk-grid" data-uk-grid-margin>
 						<div class="uk-width-medium-1-3">
 							<div class="parsley-row">
-								<label for="studentGender">Gender<span class="req">*</span></label>
+								<label for="studentGender">Gender</label>
 								<select id="studentGender" name="studentGender"
 									class="form-control input-sm md-input"
 									style="padding: 0px; font-weight: bold; color: #727272;">
@@ -1981,16 +4234,16 @@ function ReceivePendingDue(pendingId,pendingAmount,discount){
 						</div>
 						<div class="uk-width-medium-1-3">
 							<div class="parsley-row">
-								<label for="school">School<span class="req">*</span></label>
-								{{Form::text('school', null,array('id'=>'school', 'required',
+								<label for="school">School</label>
+								{{Form::text('school', null,array('id'=>'school',
 								'class' => 'form-control input-sm md-input'))}}
 							</div>
 						</div>
 						<div class="uk-width-medium-1-3">
 							<div class="parsley-row">
-								<label for="location">Location<span class="req">*</span></label>
+								<label for="location">Location</label>
 								{{Form::text('location', null,array('id'=>'location',
-								'required', 'class' => 'form-control input-sm md-input'))}}
+								 'class' => 'form-control input-sm md-input'))}}
 							</div>
 						</div>
 					</div>
@@ -1999,23 +4252,23 @@ function ReceivePendingDue(pendingId,pendingAmount,discount){
 					<div class="uk-grid" data-uk-grid-margin>
 						<div class="uk-width-medium-1-3">
 							<div class="parsley-row">
-								<label for="hobbies">Hobbies<span class="req">*</span></label>
-								{{Form::text('hobbies', null,array('id'=>'hobbies', 'required',
+								<label for="hobbies">Hobbies</label>
+								{{Form::text('hobbies', null,array('id'=>'hobbies', 
 								'class' => 'form-control input-sm md-input'))}}
 							</div>
 						</div>
 						<div class="uk-width-medium-1-3">
 							<div class="parsley-row">
-								<label for="emergencyContact">Emergency contact<span class="req">*</span></label>
+								<label for="emergencyContact">Emergency contact</label>
 								{{Form::text('emergencyContact',
-								null,array('id'=>'emergencyContact', 'required', 'class' =>
+								null,array('id'=>'emergencyContact',  'class' =>
 								'form-control input-sm md-input'))}}
 							</div>
 						</div>
 						<div class="uk-width-medium-1-3">
 							<div class="parsley-row">
-								<label for="remarks">Remarks<span class="req">*</span></label>
-								{{Form::text('remarks', null,array('id'=>'remarks', 'required',
+								<label for="remarks">Remarks</label>
+								{{Form::text('remarks', null,array('id'=>'remarks', 
 								'class' => 'form-control input-sm md-input'))}}
 							</div>
 						</div>
@@ -2023,7 +4276,7 @@ function ReceivePendingDue(pendingId,pendingAmount,discount){
 					<div class="uk-grid" data-uk-grid-margin>
 						<div class="uk-width-medium-1-1">
 							<div class="parsley-row">
-								<label for="healthIssue">Health Issues<span class="req">*</span></label>
+								<label for="healthIssue">Health Issues</label>
 								{{ Form::textarea('healthIssue', null, ['id'=>'healthIssue',
 								'size' => '10x3', 'class' => 'form-control input-sm md-input'])
 								}}
@@ -2043,7 +4296,7 @@ function ReceivePendingDue(pendingId,pendingAmount,discount){
 </div>
 <!-- Add Kids -->
 
-
+<!-- pendingamount -->
 <div id="pendingamount" class="modal fade" role="dialog" style="margin-top: 50px; z-index: 99999;">
     <div class="modal-dialog modal-lg">
     
@@ -2063,4 +4316,173 @@ function ReceivePendingDue(pendingId,pendingAmount,discount){
       
     </div>
   </div>
+
+ <!-- history iv Modal -->
+  <div id='ivhistory' class="modal fade" role="dialog" style="margin-top: 50px; z-index: 99999;"> 
+    <div class="modal-dialog modal-lg">
+    
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header" id="ivhistoryheader">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title">Introvisit History</h4>
+        </div>
+        <div class="modal-body" id="ivhistorybody">
+          <p></p>
+        </div>
+        <div class="modal-footer" id="ivhistoryfooter">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+
+ 
+ 
+ <!-- Receive due Modal -->
+  <div id='receivedue' class="modal fade" role="dialog" style="margin-top: 50px; z-index: 99999;"> 
+    <div class="modal-dialog modal-lg">
+    
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header" id="receivedueheader">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title">Receive Due</h4>
+        </div>
+        <div class="modal-body" id="receiveduebody">
+            <div  class="uk-grid" data-uk-grid-margin>
+                      <div class="uk-width-medium-1-1" id="receiveDueMsg"></div>
+            </div>
+          <div  class="uk-grid" data-uk-grid-margin>
+              <div class="uk-width-medium-1-1" >
+               <h4>Select Payment Type</h4>
+              </div>
+            </div>
+          <div id="receivepaymentType" class="uk-grid" data-uk-grid-margin>
+								<div class="uk-width-medium-1-3">
+									<div class="parsley-row">
+										<input type="radio" name="paymentReceiveTypeRadio" required
+											id="paymentOptionsReceive_1" value="card" /> <label
+											for="paymentOptionsReceive_1" class="inline-label">Card</label> 
+                                                                                <input type="radio" name="paymentReceiveTypeRadio" id="paymentOptionsReceive_2"
+											value="cash" /> <label for="paymentOptionsReceive_2"
+											class="inline-label">Cash</label>
+                                                                                <input type="radio" name="paymentReceiveTypeRadio" id="paymentOptionsReceive_3" value="cheque" />
+										       <label for="paymentOptionsReceive_3" class="inline-label">Cheque</label>
+
+							
+                                                                        </div>
+                                                                </div>
+                                                                <div class="uk-width-medium-1-3">
+                                                                    <input type="hidden" id="pending_id" value=""/>
+                                                                    <input type="hidden" id="pending_amt" value=""/>
+                                                                    <input type="hidden" id="pending_discount" value=""/>
+                                                                </div>
+           </div>
+           <div id="paymentReceiveType" style="width: 100%">
+		<div id="receiveCardDetailsDiv" class="uk-grid" data-uk-grid-margin>
+		    <div class="uk-width-medium-1-1">
+                        <h4>Card details</h4>
+                    </div>
+                    <div class="uk-width-medium-1-2">
+			<div class="parsley-row">
+                            <select name="receivecardType" id="receivecardType"
+				class="input-sm md-input"
+				class="form-control input-sm md-input"
+			        style='padding: 0px; font-weight: bold; color: #727272;'>
+                                <option value="master">Master card</option>
+				<option value="maestro">Maestro</option>
+				<option value="visa">Visa</option>
+                                <option value="Rupay">Rupay</option>
+                            </select>
+			</div>
+                    </div>
+                    <div class="uk-width-medium-1-2">
+			<div class="parsley-row">
+                            <label for="card4digits" class="inline-label">Last 4 digits
+                               of your card<span class="req">*</span>
+			    </label> 
+                            <input id="receivecard4digits" number name="receivecard4digits"
+			    maxlength="4" type="text" class="form-control input-sm md-input" />
+			</div>
+		    </div>
+	            <br clear="all"/><br clear="all"/>						
+                    <div class="uk-width-medium-1-2">
+			<div class="parsley-row">
+                            <label for="receivecardBankName" class="inline-label">Bank Name of your card<span class="req">*</span>
+			    </label> 
+                            <input id="receivecardBankName" number name="receivecardBankName"	 type="text"
+			     class="form-control input-sm md-input" />
+			</div>
+		    </div>
+									
+		    <div class="uk-width-medium-1-2">
+			<div class="parsley-row">
+			    <label for="receivecardRecieptNumber" class="inline-label">Reciept number<span class="req">*</span>
+			    </label> 
+                            <input id="receivecardRecieptNumber" number name="receivecardRecieptNumber"
+				 type="text" class="form-control input-sm md-input" />
+                        </div>
+                    </div>
+
+		</div>
+                <div id="receiveChequeDetailsDiv" class="uk-grid" data-uk-grid-margin>
+
+                    <div class="uk-width-medium-1-1">
+			<h4>Cheque details</h4>
+                            <br clear="all"/>
+                    </div>
+                    <div class="uk-width-medium-1-2">
+			<div class="parsley-row">
+                            <label for="receivechequeBankName" class="inline-label">Bank name<span
+				class="req">*</span></label> <input id="receivechequeBankName"
+				name="receivebankName" type="text"
+                                accept=""class="form-control input-sm md-input" />
+			</div>
+                    </div>
+		    <div class="uk-width-medium-1-2">
+                        <div class="parsley-row">
+                            <label for="receivechequeNumber" class="inline-label">Cheque number<span
+				class="req">*</span></label> <input id="receivechequeNumber"
+				name="receivechequeNumber" type="text"
+				class="form-control input-sm md-input" />
+                        </div>
+		    </div>
+		</div>
+								
+								
+                <div id="receiveemailEnrollPrintDiv" class="uk-grid" data-uk-grid-margin>
+                    <div class="uk-width-medium-1-1">
+			<h4>Invoice option</h4>
+		    </div>
+		    <div class="uk-width-medium-1-2">
+			<div class="parsley-row">
+                            <input id="receiveinvoicePrintOption" name="receiveinvoicePrintOption"  value="yes"  type="checkbox"  class="checkbox-custom" />
+                                <label for="receiveinvoicePrintOption"  class="checkbox-custom-label">Print Invoice<span
+                                    class="req">*</span></label> 
+			</div>
+                    </div>
+                    <div class="uk-width-medium-1-2" id='receiveemail' style="display:none">
+			<div class="parsley-row">
+                            <input id="receiveemailOption" name="receiveemailOption" type="checkbox"  value="yes" class="checkbox-custom"  />
+				<label for="receiveemailOption" class="checkbox-custom-label">Email Invoice<span
+                                    class="req">*</span></label> 
+                        </div>
+                    </div>
+		</div>
+
+            </div>
+
+       </div>     
+          
+        <div class="modal-footer" id="receiveduefooter">
+          <button type="submit" class="btn btn-primary" id="receivepayment">Receive Payment</button>
+          <button type="button" class="btn btn-default" id='receivedueclose'>Close</button>
+        </div>
+      
+      
+    </div>
+  </div>
+
 @stop

@@ -20,6 +20,25 @@
     	margin-top: -0px;
     }
 
+    #enrolledtable{
+        display: block;
+    width: auto;
+    height: auto;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-collapse: inherit;
+    border-spacing: 0;
+    border-color: inherit;
+    vertical-align: inherit;
+    text-align: left;
+    font-weight: inherit;
+    -webkit-border-horizontal-spacing: 0;
+    -webkit-border-vertical-spacing: 0;
+    }
+    #enrolledtable tr:hover{
+        background-color: #e0e0e0 !important;
+    }
 </style>
 @stop
 
@@ -42,6 +61,22 @@
 
 <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js" type="text/javascript" charset="utf-8"></script>
 <script src="{{url()}}/assets/tags/js/tag-it.js" type="text/javascript" charset="utf-8"></script>
+
+
+ <!-- datatables -->
+    <script src="{{url()}}/bower_components/datatables/media/js/jquery.dataTables.min.js"></script>
+    <!-- datatables colVis-->
+    <script src="{{url()}}/bower_components/datatables-colvis/js/dataTables.colVis.js"></script>
+    <!-- datatables tableTools-->
+    <script src="{{url()}}/bower_components/datatables-tabletools/js/dataTables.tableTools.js"></script>
+    <!-- datatables custom integration -->
+    <script src="{{url()}}/assets/js/custom/datatables_uikit.min.js"></script>
+
+    <!--  datatables functions -->
+    <script src="{{url()}}/assets/js/pages/plugins_datatables.min.js"></script>
+    
+    
+    
  
 <!-- <script src="{{url()}}/assets/tagseditor/jquery.caret.min.js"></script>
 <script src="{{url()}}/assets/tagseditor/jquery.tag-editor.js"></script>
@@ -53,6 +88,27 @@
 var customerName = "{{$customer->customer_name}}";
 var customerId   = "{{$customer->id}}";
 
+$("#followuptable").DataTable({
+        "fnRowCallback": function (nRow, aData, iDisplayIndex) {
+
+            // Bind click event
+            $(nRow).click(function() {
+                  //window.open($(this).find('a').attr('href'));
+				window.location = $(this).find('a').attr('href');
+                  //OR
+
+                // window.open(aData.url);
+
+            });
+
+            return nRow;
+        },
+        "iDisplayLength": 10,
+        "lengthMenu": [ 10, 50, 100, 150, 200 ]
+    });
+
+
+
 
 //Initialize
 //var sampleTags = ['c++', 'java', 'php', 'coldfusion', 'javascript', 'asp', 'ruby', 'python', 'c', 'scala', 'groovy', 'haskell', 'perl', 'erlang', 'apl', 'cobol', 'go', 'lua'];
@@ -61,6 +117,18 @@ $('#hobbies').tagit({
 });
 
 $("#studentDob").kendoDatePicker();
+$('#remindDate').kendoDatePicker();
+$('#birthdayReminderDate').kendoDatePicker();
+$('#membershipReminderDate').kendoDatePicker();
+$('#rDate').kendoDatePicker();
+//$('#remdDate').kendoDatePicker();
+$('#enrollmentReminderDate').kendoDatePicker();
+$('#rmDate').kendoDatePicker();
+$('#rmdDate').kendoDatePicker();
+//$('#Reschedule-date').kendoDatePicker();
+$('#Reminder-date').kendoDatePicker();
+$('#introVisitTxtBox').kendoDatePicker();
+$('#reminderDateBox').kendoDatePicker();
 $("#studentDob").find('span').find('input').attr("readonly", "readonly");
 $("#reminderTxtBox").kendoDatePicker();
 
@@ -156,6 +224,14 @@ $("#kidsAddForm").submit(function (event){
 
 function addKids(event){
 	event.preventDefault();
+        /*var dob;
+        if($('#studentDob').val()==''){
+            dob='2000-11-26';
+            alert(dob);
+        }else{
+            dob=$('#studentDob').val();
+            alert(dob);
+        }*/
 	var postData = {'studentName'     : $('#studentName').val(),
 			  		'studentGender'   : $('#studentGender').val(),
 			  		'studentDob'      : $('#studentDob').val(),
@@ -194,13 +270,20 @@ function addKids(event){
     }); 	  
 }
 
-$("#saveCommentBtn").click(function (){
+$("#saveCommentBtn").click(function (){       
 	if($("#customerCommentTxtarea").val() != ""){
+                if($("#reminderTxtBox").val()==''){
 		var postData = {"customerId":customerId,
 						"commentText":$("#customerCommentTxtarea").val(),
-						"commentType":$("#commentType").val(),
-						"reminderDate":$("#reminderTxtBox").val()					
+						"commentType":$("#commentType").val(),									
 						};
+                }else{
+                var postData = {"customerId":customerId,
+						"commentText":$("#customerCommentTxtarea").val(),
+						"commentType":$("#commentType").val(),
+						"reminderDate":$("#reminderTxtBox").val(),					
+						};
+                }
 		$.ajax({
 	        type: "POST",
 	        url: ajaxUrl+"savecomment",
@@ -261,18 +344,26 @@ $('#editCustomerForm').validator().on('submit', function (e) {
 	})
 	
 	
-
-
+$("#saveCustomerBtn").click(function (e){
+	e.preventDefault();
+        console.log('prevented');
 	
+    $.ajax({
+			type: "POST",
+			url: "{{URL::to('/quick/editCustomer')}}",
+                        data: $('#editCustomerForm').serialize(),
+			dataType: 'json',
+			success: function(response){
+                            console.log(response);
+                            if(response.status=='success'){
+                              $('#messageEditCustomerDiv').html('<p class="uk-alert uk-alert-success">Sucessfully saved changes </p>')
+                            }else{
+                                 $('#messageEditCustomerDiv').html('<p class="uk-alert uk-alert-failure">Sucessfully saved changes </p>')
+                            }
+                        }
+             }); 
 	
-	
-	
-
-$("#saveCustomerBtn").click(function (){
-	
-	
-	
-})
+});
 
 
 
@@ -338,6 +429,8 @@ function startChange() {
 	} */
 
 	$("#birthdayPriceTable").show();
+        $("input[name='birthdayPaymentTypeRadio']").prop('required',true);
+        $('#birthdayPartyCreateBtn').addClass('disabled');
 }
 
 
@@ -356,8 +449,10 @@ start.max("5:00 PM");
 
 
 function calculateBirthdayPartyPrice(){
-
-
+        
+        //check if he is a member return 10000
+                //else return 12000
+                
 	if($('#applyMembership').is(":checked")) {
 
 	$("#defaultBirthdayPrice").val('12000');
@@ -370,18 +465,56 @@ function calculateBirthdayPartyPrice(){
 		$("#defaultBirthdayPrice").val('10000');
 		
 	}
+        
+            // if member are selected 
+            
+            var additionalGuestPrice    = parseInt($("#additionalGuestPrice").val());
+            var additionalHalfHourPrice = parseInt($("#additionalHalfHourPrice").val());
+            if(($('#membershipType').val()=='1')){
+            var membershipPrice         = parseInt( $("#membershipPriceBday").val());
+            }
+            var defaultBirthdayPrice    = parseInt($("#defaultBirthdayPrice").val());
+	    if($('#membershipType').val()=='1'){
+            var grandTotal = (additionalGuestPrice + additionalHalfHourPrice + membershipPrice + defaultBirthdayPrice);
+            }else {
+                var grandTotal = (additionalGuestPrice + additionalHalfHourPrice + defaultBirthdayPrice);
+            }
+            
+	
+            $("#grandTotal").val(grandTotal);
+            console.log($("#grandTotal").val());
+            var advance = $('#advanceAmount').val();
+            var remainingAmount = (grandTotal-advance);
+
+            $("#remainingAmount").val(remainingAmount);
+
+            $("#taxAmount").empty();
+            $("#totalAmountPayable").empty();
+            var tax = Math.floor(((14.5/100)*parseInt(advance)))
+	
+            $("#totalAmountPayable").val((parseInt(tax)+parseInt(advance)))
+            $("#taxAmount").val(tax);
+	
+        
 
 	}else{
-		$("#defaultBirthdayPrice").val('12000');
-
+                if($("#applyMembership").css('display')=='block'){
+                  //  alert($("#applyMembership").css('display'));
+                    $("#defaultBirthdayPrice").val('12000');
+                }else{
+                   // alert($("#applyMembership").css('display'));
+                    $("#defaultBirthdayPrice").val('10000');
+                }
 	}
 
 	var additionalGuestPrice    = parseInt($("#additionalGuestPrice").val());
 	var additionalHalfHourPrice = parseInt($("#additionalHalfHourPrice").val());
+        
 	var membershipPrice         = parseInt( $("#membershipPriceBday").val());
-	var defaultBirthdayPrice    = parseInt($("#defaultBirthdayPrice").val());
+	
+        var defaultBirthdayPrice    = parseInt($("#defaultBirthdayPrice").val());
 		
-	var grandTotal = (additionalGuestPrice + additionalHalfHourPrice + membershipPrice + defaultBirthdayPrice);
+	var grandTotal = (additionalGuestPrice + additionalHalfHourPrice + membershipPrice+ defaultBirthdayPrice);
 
 	
 	
@@ -397,30 +530,95 @@ function calculateBirthdayPartyPrice(){
 	var tax = Math.floor(((14.5/100)*parseInt(advance)))
 	
 	$("#totalAmountPayable").val((parseInt(tax)+parseInt(advance)))
-	$("#taxAmount").val(tax)
+	$("#taxAmount").val(tax);
 	
 }
 
 calculateBirthdayPartyPrice();
 
+// advance amount for keyup  
 
 $('#advanceAmount').keyup(function  (){
+        if(parseInt($('#advanceAmount').val())<0){
+            $('#advanceAmount').val('0');
+        }
+        if($('#advanceAmount').val()==''){
+            $('#advanceAmount').val('0');
+        }
 	calculateBirthdayPartyPrice();
-})
+});
+
+// advance amount for change  
+
+$('#advanceAmount').change(function(){
+        if(parseInt($('#advanceAmount').val())<0){
+            $('#advanceAmount').val('0');
+        }
+        if($('#advanceAmount').val()==''){
+            $('#advanceAmount').val('0');
+        }
+	calculateBirthdayPartyPrice();
+});
+
+
+//additionalGuestCount for keyup action
 $('#additionalGuestCount').keyup(function (){
-	
+	if(parseInt($('#additionalGuestCount').val())<0){
+            $('#additionalGuestCount').val('0');
+        }
+        if($('#additionalGuestCount').val()==''){
+            $('#additionalGuestCount').val('0');
+        }
+        
 	$("#additionalGuestPrice").val((parseInt($(this).val())*300));
 	calculateBirthdayPartyPrice();
 
 });
 
-$('#additionalHalfHourCount').keyup(function (){
-	
-	$("#additionalHalfHourPrice").val((parseInt($(this).val())*3000));
+
+//additionalGuestCount for change action
+$('#additionalGuestCount').change(function (){
+	if(parseInt($('#additionalGuestCount').val())<0){
+            $('#additionalGuestCount').val('0');
+        }
+        if($('#additionalGuestCount').val()==''){
+            $('#additionalGuestCount').val('0');
+        }
+        
+	$("#additionalGuestPrice").val((parseInt($(this).val())*300));
 	calculateBirthdayPartyPrice();
 
 });
 
+
+//  additionalHalfHourCount for keyup action
+$('#additionalHalfHourCount').keyup(function (){
+	if(parseInt($('#additionalHalfHourCount').val())<0){
+            $('#additionalHalfHourCount').val('0');
+        }
+        if($('#additionalHalfHourCount').val()==''){
+            $('#additionalHalfHourCount').val('0');
+        }
+        
+        
+	$("#additionalHalfHourPrice").val((parseInt($(this).val())*3000));
+	calculateBirthdayPartyPrice();
+
+});
+//  additionalHalfHourCount for change action
+$('#additionalHalfHourCount').change(function (){
+	if(parseInt($('#additionalHalfHourCount').val())<0){
+            $('#additionalHalfHourCount').val('0');
+        }
+        if($('#additionalHalfHourCount').val()==''){
+            $('#additionalHalfHourCount').val('0');
+        }
+        
+        
+	$("#additionalHalfHourPrice").val((parseInt($(this).val())*3000));
+	calculateBirthdayPartyPrice();
+
+});
 
 
 
@@ -434,7 +632,7 @@ $(document).ready(function (){
 		}else if($(this).val() == "2"){
 			$("#membershipPriceBday").val("5000");
 		}else{
-			$("#membershipPriceBday").val("");
+			$("#membershipPriceBday").val("0");
 		}
 		calculateBirthdayPartyPrice();
 	});
@@ -445,22 +643,30 @@ $(document).ready(function (){
 $("#membershipTableRow").hide();
 $("#applyMembership").change(function (){
 
-	if($(this).is(":checked")) {
-		$("#membershipTableRow").show();
+	if($('#applyMembership').is(":checked")) {
+                console.log('applying membership');
+                $("#membershipTableRow").show();
+                $('#membershipType').val('');
+                $('#membershipPriceBday').val('0');
 		$("#membershipType").prop('required','true');
 		$("#defaultBirthdayPrice").val('10000');
 	}else{
-
+                console.log('removing membership');
+                if($('#membershipType').val()==''){
+                   
+                }
+                $('#membershipType').val('');
+                $('#membershipPriceBday').val('0');
 		$("#defaultBirthdayPrice").val('12000');
 		$("#membershipTableRow").hide();
 		$("#membershipType").prop('required','false');
 	}
 
-	calculateBirthdayPartyPrice()
+	calculateBirthdayPartyPrice();
 })
 
 
-
+var data;
 $('#addBirthdayPartyForm').validator().on('submit', function (e) {
 	  if (e.isDefaultPrevented()) {
 	    // handle the invalid form...
@@ -472,14 +678,14 @@ $('#addBirthdayPartyForm').validator().on('submit', function (e) {
 				  type: "POST",
 				  url: ajaxUrl+"addbirthdayParty",
 				  dataType: 'json',
-				  async: true,
+                                  async: false,
 				  data:$('#addBirthdayPartyForm').serialize(),
 				  success: function(response, textStatus, jqXHR)
 				  {
-					  if(response.status == "success"){
+                                       if(response.status == "success"){
                                                     $("#addBirthdayPartyForm").empty();
                                                     if(response.printUrl!=""){
-                                                     var printvars = '<a target="_blank" href="'+response.printUrl+'" class="btn btn-primary">Print</a>';
+                                                     var printvars = '<a target="_blank" href="'+response.printUrl+'" class="btn btn-primary" >Print</a>';
                                                      $("#addbirthdaymodalbody").html('<p class="uk-alert uk-alert-success">Birthday party has been added successfully.</p>'+printvars);
                                                     $('#addbirthdaymodal').modal('show'); 
                                                     }else{
@@ -493,17 +699,21 @@ $('#addBirthdayPartyForm').validator().on('submit', function (e) {
 						  $("#addbirthdaybody").html('<p class="uk-alert uk-alert-danger">Birthday Party could not be added at this moment</p>');
 					  }
                                           $('#addbirthdayclose').click(function(){
+                                              //console.log('reloading');
                                               window.location.reload(1);
                                           });
-				  
 				  },
+                                  
 				  error: function (jqXHR, textStatus, errorThrown)
 				  {
-			 
+                                      
 				  }
+                                
 			});
+         
 	  }
-	})
+	});
+       
 	
 $("#kidsSelect").change(function (){
 
@@ -578,35 +788,1556 @@ $("input[name='paymentTypeRadio']").change(function (){
 });
 	
 
+    $('#birthdayPaymentOptionsReceive_1').change(function(){
+       if($('#birthdayPaymentOptionsReceive_1').is(":checked")){
+          console.log('card');
+           //$('#birthdayReceiveemailEnrollPrintDiv').hide();
+          $('#receiveBirthdayCardDetailsDiv').show();
+          $('#birthdayReceiveemailEnrollPrintDiv').show();
+       }
+    });
+    
+    $('#birthdayPaymentOptionsReceive_2').change(function(){
+    if($('#birthdayPaymentOptionsReceive_2').is(":checked")){
+           console.log('cash');
+           $('#receiveBirthdayCardDetailsDiv').hide();
+           $('#birthdayReceiveChequeDetailsDiv').hide();
+           //$('#birthdayReceiveemailEnrollPrintDiv').hide();
+           $('#birthdayReceiveemailEnrollPrintDiv').show();
+       }
+     });
+     
+    $('#birthdayPaymentOptionsReceive_3').change(function(){
+     if($('#birthdayPaymentOptionsReceive_3').is(":checked")){
+           console.log('cheque');
+           $('#receiveBirthdayCardDetailsDiv').hide();
+           $('#birthdayReceiveChequeDetailsDiv').show();
+           $('#birthdayReceiveemailEnrollPrintDiv').show();
+       }
+    });
+     
+
 
 function pendingamount(pendingamountId,pendingAmount){
-   var taxamount=Math.floor(((14.5/100)*parseInt(pendingAmount)));   
-       $.ajax({
+   var taxamount=Math.floor(((14.5/100)*parseInt(pendingAmount)));  
+/*   $('#birthdayPending_id').val(pendingamountId);
+   $('#birthdaypending_amt').val(pendingAmount);
+   $('#receiveBirthdayCardDetailsDiv').hide();
+   $('#birthdayReceiveChequeDetailsDiv').hide();
+   $('#birthdayReceiveemailEnrollPrintDiv').hide();
+   $('#birthdayReceivepayment').addClass('disabled');
+   $('#receiveBirthdayDue').modal('show');
+   return;
+        */
+   $.ajax({
+			type: "POST",
+			url: "{{URL::to('/quick/getBirthdayOrderPendingDetails')}}",
+                        data: {'pending_id':pendingamountId,},
+			dataType: 'json',
+                        
+			success: function(response){
+                            //console.log(response);
+                            $('#pendingamountpayheader').html("<button type='button' class='close' data-dismiss='modal'>&times;</button>  <h5>Pending amount for "+response.student_data['student_name']+"</h5>");
+                            $('#additionalguestNo').val(response.birthday_data['additional_number_of_guests']);
+                            $('#additionalguestcost').val(response.birthday_data['additional_guest_price']);
+                            $('#additionalhalfhours').val(response.birthday_data['additional_half_hours']);
+                            $('#additionalhalfhourscost').val(response.birthday_data['additional_halfhour_price']);
+                            $('#amountpending').val(response.birthday_data['remaining_due_amount']);
+                            var tax=Math.floor(((14.5/100)*parseInt($('#amountpending').val())));
+                            $('#advancepaid').val(response.birthday_data['advance_amount_paid']);
+                            $('#taxamount').val(tax);
+                            $('#amountPendingAfterTax').val(parseInt($('#taxamount').val())+parseInt(response.birthday_data['remaining_due_amount']));
+                            // $('#birthdayPending_id').val(pendingamountId);
+                            // $('#birthdaypending_amt').val(pendingAmount);
+                             $('#receiveBirthdayCardDetailsDiv').hide();
+                             $('#birthdayReceiveChequeDetailsDiv').hide();
+                             $('#birthdayReceiveemailEnrollPrintDiv').hide();
+                             //$('#pendingamountpayadd').addClass('disabled');
+                            $("#pendingamountpay").modal('show');
+                            $('#changeorder').change(function(){
+                                if($(this).is(":checked")) {
+                                    $('#additionalguestNo').removeAttr("readonly");
+                                    $('#additionalhalfhours').removeAttr("readonly");
+                                
+                                 }else{
+                                         $('#additionalguestNo').val(response.birthday_data['additional_number_of_guests']);
+                                         $('#additionalguestcost').val(response.birthday_data['additional_guest_price']);
+                                         $('#additionalhalfhours').val(response.birthday_data['additional_half_hours']);
+                                         $('#additionalhalfhourscost').val(response.birthday_data['additional_halfhour_price']);
+                                         $('#amountpending').val(response.birthday_data['remaining_due_amount']);
+                                         $('#advancepaid').val(response.birthday_data['advance_amount_paid']);
+                           
+                                 }
+                                 
+                               
+                                
+                            });
+                            $('#additionalguestNo').change(function(){
+                                if($('#additionalguestNo').val()<0){
+                                    $('#additionalguestNo').val(0);
+                                }
+                                if($('#additionalguestNo').val()==''){
+                                    $('#additionalguestNo').val(0);
+                                }
+                                var addguestno=$('#additionalguestNo').val()
+                                var addguestamt=$('#additionalguestNo').val() * 300;
+                                $('#additionalguestcost').val(addguestamt);
+                                var addtionaltimecost=parseInt($('#additionalhalfhourscost').val());
+                                $('#amountpending').val(parseInt(response.birthday_data['default_birthday_cost'])+addguestamt+addtionaltimecost);
+                                var tax=Math.floor(((14.5/100)*parseInt($('#amountpending').val())));
+                                $('#taxamount').val(tax);
+                                $('#amountPendingAfterTax').val(parseInt($('#taxamount').val())+parseInt($('#amountpending').val()));
+                            });
+                            //for keyup operation additionalguestNo
+                            $('#additionalguestNo').keyup(function(){
+                                if($('#additionalguestNo').val()<0){
+                                    $('#additionalguestNo').val(0);
+                                }
+                                if($('#additionalguestNo').val()==''){
+                                    $('#additionalguestNo').val(0);
+                                }
+                                var addguestno=$('#additionalguestNo').val()
+                                var addguestamt=$('#additionalguestNo').val() * 300;
+                                $('#additionalguestcost').val(addguestamt);
+                                var addtionaltimecost=parseInt($('#additionalhalfhourscost').val());
+                                $('#amountpending').val(parseInt(response.birthday_data['default_birthday_cost'])+addguestamt+addtionaltimecost);
+                                var tax=Math.floor(((14.5/100)*parseInt($('#amountpending').val())));
+                                $('#taxamount').val(tax);
+                                $('#amountPendingAfterTax').val(parseInt($('#taxamount').val())+parseInt($('#amountpending').val()));
+                            });
+                            //additional half hour change for receive due
+                            $('#additionalhalfhours').change(function(){
+                                if($('#additionalhalfhours').val()<0){
+                                    $('#additionalhalfhours').val(0);
+                                }
+                                if($('#additionalhalfhours').val()==''){
+                                    $('#additionalhalfhours').val(0);
+                                }
+                                $('#additionalhalfhourscost').val(parseInt($('#additionalhalfhours').val()) * 3000);
+                                var addtionaltimecost=parseInt($('#additionalhalfhourscost').val());
+                                $('#amountpending').val(parseInt(response.birthday_data['default_birthday_cost'])+parseInt($('#additionalguestcost').val())+addtionaltimecost);
+                                var tax=Math.floor(((14.5/100)*parseInt($('#amountpending').val())));
+                                $('#taxamount').val(tax);
+                                $('#amountPendingAfterTax').val(parseInt($('#taxamount').val())+parseInt($('#amountpending').val()));
+                        
+                            });
+                            // for keyup operation
+                            $('#additionalhalfhours').keyup(function(){
+                                if($('#additionalhalfhours').val()<0){
+                                    $('#additionalhalfhours').val(0);
+                                }
+                                if($('#additionalhalfhours').val()==''){
+                                    $('#additionalhalfhours').val(0);
+                                }
+                                $('#additionalhalfhourscost').val(parseInt($('#additionalhalfhours').val()) * 3000);
+                                var addtionaltimecost=parseInt($('#additionalhalfhourscost').val());
+                                $('#amountpending').val(parseInt(response.birthday_data['default_birthday_cost'])+parseInt($('#additionalguestcost').val())+addtionaltimecost);
+                                var tax=Math.floor(((14.5/100)*parseInt($('#amountpending').val())));
+                                $('#taxamount').val(tax);
+                                $('#amountPendingAfterTax').val(parseInt($('#taxamount').val())+parseInt($('#amountpending').val()));
+                        
+                            });
+                            
+                        }
+             }); 
+   $('#pendingamountpayadd').click(function(){
+            var paymentType = $("input[type='radio'][name='birthdayPaymentReceiveTypeRadio']:checked").val();
+            var printoption=$('#birthdayReceiveinvoicePrintOption').is(':checked');
+            if($('#changeorder').is(":checked")==false){
+             // create normal order form pending order
+            var taxamount=Math.floor(((14.5/100)*parseInt($('#amountpending').val())));   
+            
+            
+                  if(paymentType=='cash'){
+                      //for without change of order cash
+                    $.ajax({
 			type: "POST",
 			url: "{{URL::to('/quick/createorder')}}",
-                        data: {'pending_id':pendingamountId,'taxamount':taxamount},
+                        data: {'pending_id':pendingamountId,'taxamount':taxamount,'paymentType':paymentType,},
+			dataType: 'json',
+			success: function(response){
+                            console.log(response);
+                            if(response.status=='success'){
+                               // $('#pendingamountpayadd').attr("disabled","");
+                            //$('#birthdays').empty();
+                            $('#pendingamountpayadd').css('display','none');
+                            var printvars = '<a target="_blank" href="'+response.printurl+'" class="btn btn-primary">Print</a>';
+                            $('#pendingamountpaybody').empty();         
+                            if(printoption){
+                                $('#pendingamountpaybody').html("<p class='uk-alert uk-alert-success'>successfully received pending amount.</p> </br>"+printvars);
+                            }else{
+                                $('#pendingamountpaybody').html("<p class='uk-alert uk-alert-success'>successfully received pending amount.</p> ");
+                            
+                            }
+                            $('#pendingclose').click(function(){
+				   window.location.reload(1);
+                            });
+
+                        }
+                        }
+                    });
+                   }else if(paymentType=='cheque'){
+                       // for without change of order cheque
+                                 
+                                 
+                                 if(($('#birthdayReceivechequeBankName').val()!='') && ($('#birthdayReceivechequeNumber').val()!='')){
+                                       console.log('cheque');
+                                       $.ajax({
+                                	type: "POST",
+                                        url: "{{URL::to('/quick/createorder')}}",
+                                        data: {'pending_id':pendingamountId,'taxamount':taxamount,'paymentType':paymentType,
+                                               'birthdayReceivechequeBankName':$('#birthdayReceivechequeBankName').val(),
+                                                'birthdayReceivechequeNumber':$('#birthdayReceivechequeNumber').val(),},
+                                        dataType: 'json',
+                                        success: function(response){
+                                        console.log(response);
+                                        if(response.status=='success'){
+                                        $('#pendingamountpayadd').css('display','none');
+                                        //$('#birthdays').empty();
+                                        var printvars = '<a target="_blank" href="'+response.printurl+'" class="btn btn-primary">Print</a>';
+                                        $('#pendingamountpaybody').empty();                         
+                                        if(printoption){
+                                           $('#pendingamountpaybody').html("<p class='uk-alert uk-alert-success'>successfully received pending amount.</p> </br>"+printvars);
+                                        }else{
+                                            $('#pendingamountpaybody').html("<p class='uk-alert uk-alert-success'>successfully received pending amount.</p> ");
+                                        }            
+                                        $('#pendingclose').click(function(){
+                                         window.location.reload(1);
+                                        });
+
+                                        }
+                                        }
+                                        });
+                                 }else{
+                                    $('#msg').html("<p class='uk-alert uk-alert-warning'>Please enter all details.</p>");
+                                 }
+                        
+                        
+                   }else if(paymentType=='card'){
+                    
+                                 if(($('#birthdayReceivecard4digits').val()!='') && ($('#birthdayReceivecardBankName').val()!='') &&
+                                    ($('#birthdayReceivecardRecieptNumber').val()!='')){
+                                       console.log('card');
+                                       $.ajax({
+                                	type: "POST",
+                                        url: "{{URL::to('/quick/createorder')}}",
+                                        data: {'pending_id':pendingamountId,'taxamount':taxamount,'paymentType':paymentType,
+                                               'birthdayReceivecard4digits':$('#birthdayReceivecard4digits').val(),
+                                               'birthdayReceivecardBankName':$('#birthdayReceivecardBankName').val(),
+                                               'birthdayReceivecardRecieptNumber':$('#birthdayReceivecardRecieptNumber').val(),
+                                               'birthdayReceivecardType':$('#birthdayReceivecardType').val(),
+                                              },
+                                        dataType: 'json',
+                                        success: function(response){
+                                        console.log(response);
+                                        if(response.status=='success'){
+                                        $('#pendingamountpayadd').css('display','none');
+                                        //$('#birthdays').empty();
+                                        var printvars = '<a target="_blank" href="'+response.printurl+'" class="btn btn-primary">Print</a>';
+                                        $('#pendingamountpaybody').empty();                         
+                                        if(printoption){
+                                           $('#pendingamountpaybody').html("<p class='uk-alert uk-alert-success'>successfully received pending amount.</p> </br>"+printvars);
+                                        }else{
+                                            $('#pendingamountpaybody').html("<p class='uk-alert uk-alert-success'>successfully received pending amount.</p> ");
+                                        }
+                                        $('#pendingclose').click(function(){
+                                         window.location.reload(1);
+                                        });
+
+                                        }
+                                        }
+                                        });
+                                 }else{
+                                           //console.log('comingto else');
+                                    $('#msg').html("<p class='uk-alert uk-alert-warning'>Please enter all details.</p>");
+                                 }
+                   }else{
+                     $('#msg').html("<p class='uk-alert uk-alert-warning'>please select payment type details</p>")
+                   }
+                   
+                   
+         }else{
+             //update birthday and payment due table the create order from pending order
+              var taxamount=Math.floor(((14.5/100)*parseInt($('#amountpending').val())));
+                if(paymentType=='cash'){ 
+                 $.ajax({
+			type: "POST",
+			url: "{{URL::to('/quick/modifyBirthdayPendingOrder')}}",
+                        data: {'pending_id':pendingamountId,'amountpending':$('#amountpending').val(),'taxamount':taxamount,
+                            'additionalguestNo':$('#additionalguestNo').val(),'additionalguesAmount':$('#additionalguestcost').val(),
+                            'additionalhalfhours':$('#additionalhalfhours').val(),'additionalhalfhourscost':$('#additionalhalfhourscost').val(),
+                             'paymentType':paymentType,},
 			dataType: 'json',
 			success: function(response){
                             console.log(response.status);
-                            $('#birthdays').empty();
-                            var printvars = '<a target="_blank" href="'+response.printurl+'" class="btn btn-primary">Print</a>';
-                                                     
-                            $('#pendingamountbody').html(printvars);
-                            $('#pendingamount').modal('show'); 
-                            $('#pendingamountclose').click(function(){
-                            window.location.reload(1);        
+                            $('#pendingamountpayadd').css('display','none');
+                             var printvars = '<a target="_blank" href="'+response.printurl+'" class="btn btn-primary">Print</a>';
+                              $('#pendingamountpaybody').empty();                         
+                              if(printoption){
+                              $('#pendingamountpaybody').html("<p class='uk-alert uk-alert-success'>successfully received pending amount.</p> </br>"+printvars);
+                               }else{
+                              $('#pendingamountpaybody').html("<p class='uk-alert uk-alert-success'>successfully received pending amount.</p> ");
+                                }
+                              $('#pendingclose').click(function(){
+				   window.location.reload(1);
                             });
                         }
-             })
-     
+                 });  
+                 }else if(paymentType=='card'){
+                      if(($('#birthdayReceivecard4digits').val()!='') && ($('#birthdayReceivecardBankName').val()!='') &&
+                        ($('#birthdayReceivecardRecieptNumber').val()!='')){
+                        $.ajax({
+			 type: "POST",
+			 url: "{{URL::to('/quick/modifyBirthdayPendingOrder')}}",
+                         data: {'pending_id':pendingamountId,'amountpending':$('#amountpending').val(),'taxamount':taxamount,
+                            'additionalguestNo':$('#additionalguestNo').val(),'additionalguesAmount':$('#additionalguestcost').val(),
+                            'additionalhalfhours':$('#additionalhalfhours').val(),'additionalhalfhourscost':$('#additionalhalfhourscost').val(),
+                             'paymentType':paymentType,'birthdayReceivecard4digits':$('#birthdayReceivecard4digits').val(),
+                                               'birthdayReceivecardBankName':$('#birthdayReceivecardBankName').val(),
+                                               'birthdayReceivecardRecieptNumber':$('#birthdayReceivecardRecieptNumber').val(),
+                                               'birthdayReceivecardType':$('#birthdayReceivecardType').val(),},
+			 dataType: 'json',
+			 success: function(response){
+                            console.log(response.status);
+                            $('#pendingamountpayadd').css('display','none');
+                             var printvars = '<a target="_blank" href="'+response.printurl+'" class="btn btn-primary">Print</a>';
+                              $('#pendingamountpaybody').empty();                         
+                              if(printoption){
+                               $('#pendingamountpaybody').html("<p class='uk-alert uk-alert-success'>successfully received pending amount.</p> </br>"+printvars);
+                                }else{
+                                 $('#pendingamountpaybody').html("<p class='uk-alert uk-alert-success'>successfully received pending amount.</p> ");
+                                }
+                               $('#pendingclose').click(function(){
+				   window.location.reload(1);
+                            });
+                         }
+                        });
+                        }else{
+                         $('#msg').html("<p class='uk-alert uk-alert-warning'>Please enter all details.</p>");
+                        }
+                 }else
+                 if(paymentType=='cheque'){
+                     if(($('#birthdayReceivechequeBankName').val()!='') && ($('#birthdayReceivechequeNumber').val()!='')){
+                     $.ajax({
+			 type: "POST",
+			 url: "{{URL::to('/quick/modifyBirthdayPendingOrder')}}",
+                         data: {'pending_id':pendingamountId,'amountpending':$('#amountpending').val(),'taxamount':taxamount,
+                            'additionalguestNo':$('#additionalguestNo').val(),'additionalguesAmount':$('#additionalguestcost').val(),
+                            'additionalhalfhours':$('#additionalhalfhours').val(),'additionalhalfhourscost':$('#additionalhalfhourscost').val(),
+                             'paymentType':paymentType, 'birthdayReceivechequeBankName':$('#birthdayReceivechequeBankName').val(),
+                                                'birthdayReceivechequeNumber':$('#birthdayReceivechequeNumber').val(),},
+			 dataType: 'json',
+			 success: function(response){
+                            console.log(response.status);
+                            $('#pendingamountpayadd').css('display','none');
+                             var printvars = '<a target="_blank" href="'+response.printurl+'" class="btn btn-primary">Print</a>';
+                             $('#pendingamountpaybody').empty();                         
+                                if(printoption){
+                                           $('#pendingamountpaybody').html("<p class='uk-alert uk-alert-success'>successfully received pending amount.</p> </br>"+printvars);
+                                        }else{
+                                            $('#pendingamountpaybody').html("<p class='uk-alert uk-alert-success'>successfully received pending amount.</p> ");
+                                        }
+                              $('#pendingclose').click(function(){
+                                window.location.reload(1);
+                            });
+                         }
+                        });
+                        }else{
+                         $('#msg').html("<p class='uk-alert uk-alert-warning'>Please enter all details.</p>");
+                        }
+                 }else{
+                     $('#msg').html("<p class='uk-alert uk-alert-warning'>please select payment type details</p>")
+                   }
+
+         }
+         });
 }
+
+$.urlParam = function(name){
+	var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+	if(results){
+        return results[1];
+        }else{
+        return 0;
+        }
+}
+
+//for selecting comments and logs page from dashboard
+$(document).ready(function(){
+   // for 
+   if($.urlParam('tab')==='ivfollowup'){
+   //for heading     
+   $('#customerInfoTabMenu').removeClass('uk-active');
+   $('#customerInfoTabMenu').attr('aria-expanded','false');
+   $('#followupTabMenu').addClass('uk-active');
+   $('#followupTabMenu').attr('aria-expanded','false');
+   
+   //for tabs data
+   $('#customerInfoTab').attr('aria-hidden','true');
+   $('#customerInfoTab').removeClass('uk-active');
+   $('#customerInfoTab').attr('style','');
+   
+   $('#followupTab').attr('aria-hidden','false');
+   $('#followupTab').addClass('uk-active');
+   $('#followupTab').attr('style','animation-duration: 200ms;');
+   
+   
+   }
+   
+   //for birthday tabs from dashboard
+   if($.urlParam('tab')==='birthdayparty'){
+   //for heading     
+   $('#customerInfoTabMenu').removeClass('uk-active');
+   $('#customerInfoTabMenu').attr('aria-expanded','false');
+   $('#birthdayPartyInfoTabMenu').addClass('uk-active');
+   $('#birthdayPartyInfoTabMenu').attr('aria-expanded','false');
+   
+   //for tabs data
+   $('#customerInfoTab').attr('aria-hidden','true');
+   $('#customerInfoTab').removeClass('uk-active');
+   $('#customerInfoTab').attr('style','');
+   
+   $('#birthdays').attr('aria-hidden','false');
+   $('#birthdays').addClass('uk-active');
+   $('#birthdays').attr('style','animation-duration: 200ms;');
+   
+   
+   }
+   
+});
+/*
+$('#followupTypeCbx').change(function(){
+
+   if($('#followupTypeCbx').val()=='INTROVISIT'){
+       $('#actionCbx').html('');
+       $('#actionCbx').append("<option value=''></option>"+
+                            "<option value='ADDINTROVISIT'>AddIntrovisit</option>"+
+                            "<option value='FOLLOWUPINTROVISIT'>FollowupIntrovisit</option>");
+   }else{
+       $('#actionCbx').html('');
+   } 
+});
+
+*/
+function getEligibleClasses(ageYear,ageMonth,studentGender){
+var yearAndMonth= (parseInt(ageYear*12)+parseInt(ageMonth));
+          //console.log(ageYear);
+          //console.log(ageMonth);
+          //console.log(yearAndMonth);
+	  $.ajax({
+        type: "POST",
+        url: "{{URL::to('/quick/eligibleClassess')}}",
+        //data: {'ageYear': ageYear, 'ageMonth': ageMonth, 'gender':studentGender,'yearAndMonth':yearAndMonth,},
+        data: {'ageYear': ageYear, 'ageMonth': ageMonth, 'gender':studentGender,'yearAndMonth':yearAndMonth},
+        dataType:"json",
+        success: function (response)
+        {
+         // console.log(response);
+      	  $(".eligibleClassesCbx").empty("");      	  
+      	  $string = '<option value=""></option>';
+      	  $.each(response, function (index, item) {
+      		  //console.log(index+" = "+item);
+      		  $string += '<option value='+item.id+'>'+item.class_name+'</option>';               
+            });
+      	  $('.eligibleClassesCbx').append($string); 
+        }
+    });
+}
+
+function getivdata(ivid){
+    //console.log(ivid);
+    
+    
+    $.ajax({
+			type: "POST",
+			url: "{{URL::to('/quick/getIntrovisitHistory')}}",
+                        data: {'introvisit_id':ivid},
+			dataType: 'json',
+			success: function(response){
+                            //console.log(response);
+                            var data="<table class='uk-table'>"+
+                                    "<thead>"+
+                                    "<tr>"+
+                                    "<th class='uk-text-nowrap'>FollowupType</th>"+
+                                    "<th class='uk-text-nowrap'>Quality</th>"+
+                                    "<th class='uk-text-nowrap'>Description</th>"+
+                                    "<th class='uk-text-nowrap'>CommentedBy</th>"+
+                                    "</tr>"+
+                                    "</thead>";
+                           for(var i=0;i<response.status.length;i++){
+                                data+="<tr role='row'>"+
+                                        "<td>"+response.status[i]['followup_status']+"</td><td>"+response.status[i]['comment_type']+"</td>"+
+                                        "<td>"+response.status[i]['log_text']+"</td>"+
+                                        "<td>"+response.status[i]['commentor_name']+"</td>"+
+                                        "</tr>";
+                            }
+                            data+="</table>";
+                            //console.log(data);
+                            $('#ivhistorybody').html(data);
+                            $('#ivhistory').modal('show');
+                        }
+             });      
+}
+
+
+function selectstatus(ivId,ivStatus,comment_type){
+//console.log(ivId);     
+//console.log(ivStatus);
+        if(ivStatus=='ENROLLED'){
+            //console.log('working');
+            $('#reminderDate').css('display','none');
+        }
+        if(ivStatus=='NOT_INTERESTED'){
+            $('#reminderDate').css('display','none');
+        }
+        $('#iv_id').val(ivId);
+	$("#iveditSelect").data('iveditid',ivId);
+	$("#ivEditForm").show();
+	$("#iveditstatusSelect").val(ivStatus);
+        if(comment_type!=='ACTION_LOG'){
+            $('#iveditActionSelect').val(comment_type);
+        }else{
+            $('#iveditActionSelect').val(' ');
+        }
+	$("#introvisitEditDiv").show();
+	$("#saveIntroVisitBtn").show();
+	$("#editIntrovisitModal").modal('show');
+        
+}
+
+function selectEnrollmetnstatus(payment_due_id,followup_status,comment_type){
+    $('#payment_due_id').val(payment_due_id);
+    $('#enrollmenteditstatusSelect').val(followup_status);
+    $('#enrollmenteditActionSelect').val(comment_type);
+    $("#enrollmentEditDiv").show();
+    $("#saveenrollmentVisitBtn").show();
+    $("#editEnrollmentModal").modal('show');
+        
+    
+}
+
+$("#saveIntroVisitBtn").click(function (){
+    if(($('#iveditActionSelect').val()!=' ') && $('#iveditstatusSelect').val()=='NOT_INTERESTED'){
+	saveIv();
+    }else if(($('#iveditActionSelect').val()!=' ') && ($('#iveditstatusSelect').val()=='ENROLLED')){
+        saveIv();
+    }else if(($('#iveditActionSelect').val()!=' ') && ($('#Reminder-date').val()!='')){
+        saveIv();
+    }else{
+        $('#introVisitEditMessage').html('<p class="uk-alert uk-alert-warning">Please select the reminder-date for further followup</p>');
+    }	
+});
+
+
+$('#saveEnrollmentBtn').click(function(){
+  if(($('#enrollmenteditActionSelect').val()!=' ')&&($('#enrollmenteditstatusSelect').val()=='NOT_INTERESTED')){
+      
+      saveEnrollment();
+  }else if(($('#enrollmenteditActionSelect').val()!=' ')&& ($('#enrollmenteditstatusSelect').val()=='CLOSE_CALL')){
+      
+      saveEnrollment();
+  }else if(($('#enrollmenteditActionSelect').val()!=' ')&& ($('#enrollmentReminderDate').val()!='')){
+      
+      saveEnrollment();
+  }else{
+        $('#enrollmentEditMessage').html('<p class="uk-alert uk-alert-warning">Please select the reminder-date for further followup</p>');
+  }
+  
+});
+
+function saveEnrollment(){
+    console.log('saving enrollment');
+    $.ajax({
+        type: "POST",
+        url: "{{URL::to('/quick/editEnrollment')}}",
+        data:{'paymentdue_id':$('#payment_due_id').val(), "customerCommentTxtarea":$("#enrollmentcustomerCommentTxtarea").val(),
+              'reminder-date':$('#enrollmentReminderDate').val(),'enrollmentstatus':$('#enrollmenteditstatusSelect').val(),
+              'enrollmenteditAction':$('#enrollmenteditActionSelect').val(),},
+        //data: {'classId': $("#eligibleClassesCbx").val(), 'batchId':$("#batchCbx").val(), "studentId":studentId},
+        dataType:"json",
+        success: function (response)
+        {
+           
+            
+        	if(response.status == "success"){
+
+                $("#enrollmentEditForm").hide();
+            	$("#enrollmentEditMessage").val('');
+            	$("#saveEnrollmentBtn").hide();
+                $('#enrollmentcomments').hide();
+                $('#comment_hide').css('display','none');
+				$("#enrollmentEditMessage").html('<p class="uk-alert uk-alert-success">Followup changed successfully. Please wait till this page reloads</p>');
+				setTimeout(function(){
+                                    //console.log(window.location.href.split('?')[0]);
+				   var path= window.location.href.split('?')[0];
+                                   window.location.href = path+'?tab=ivfollowup';
+                                   window.location.reload(1);
+				}, 4000);
+				
+        	}else{
+        		$("#enrollmentEditForm").hide();
+	                $("#enrollmentEditMessage").val('');
+                        $('#enrollmentcomments').hide();
+                       //$('#comment_hide').css('display','none');
+        		$("#enrollmentEditMessage").html('<p class="uk-alert uk-alert-danger">Sorry! Followup could not be changed.</p>');
+        	}
+            
+        }
+    }); 
+}
+$('#enrollmenteditstatusSelect').change(function(){
+   if(($('#enrollmenteditstatusSelect').val()=='NOT_INTERESTED')||($('#enrollmenteditstatusSelect').val()=='CLOSE_CALL')){
+       $("#enrollmentEditMessage").html('<p class="uk-alert uk-alert-warning">you are about to close followup call.</p>');
+       $('#eReminderDate').hide();
+   }else{
+       $('#eReminderDate').show();
+   }
+});
+
+$('#reschedule-date').kendoDatePicker();
+function saveIv(){
+
+
+	//var ivid = $("#iveditSelect").data('iveditid');
+	//var ivstatus = $("#iveditSelect").val();
+
+	$.ajax({
+        type: "POST",
+        url: "{{URL::to('/quick/editIntrovisit')}}",
+        data:{'iv_id':$('#iv_id').val(), "customerCommentTxtarea":$("#ivcustomerCommentTxtarea").val(),
+              'reminder-date':$('#Reminder-date').val(),'ivstatus':$('#iveditstatusSelect').val(),
+              'iveditAction':$('#iveditActionSelect').val(),},
+        //data: {'classId': $("#eligibleClassesCbx").val(), 'batchId':$("#batchCbx").val(), "studentId":studentId},
+        dataType:"json",
+        success: function (response)
+        {
+            console.log(response);
+            
+        	if(response.status == "success"){
+
+                $("#ivEditForm").hide();
+            	$("#introvisitEditDiv").hide();
+            	$("#saveIntroVisitBtn").hide();
+                $('#ivcustomerCommentTxtarea').hide();
+                $('#comment_hide').css('display','none');
+				$("#introVisitEditMessage").html('<p class="uk-alert uk-alert-success">Followup changed successfully. Please wait till this page reloads</p>');
+				setTimeout(function(){
+                                    //console.log(window.location.href.split('?')[0]);
+				   var path= window.location.href.split('?')[0];
+                                   window.location.href = path+'?tab=ivfollowup';
+                                   window.location.reload(1);
+				}, 4000);
+				
+        	}else{
+        		$("#ivEditForm").hide();
+	                $("#introvisitEditDiv").hide();
+                        $('#ivcustomerCommentTxtarea').hide();
+                       $('#comment_hide').css('display','none');
+        		$("#introVisitEditMessage").html('<p class="uk-alert uk-alert-danger">Sorry! Followup could not be changed.</p>');
+        	}
+            
+        }
+    }); 
+}
+
+
+$('#saveBirthdayBtn').click(function(){
+    if($('#birthdayActionSelect').val()!=' ' && $('#birthdayeditstatusSelect').val()=='NOT_INTERESTED'){
+        saveBirthday();
+    }else if($('#birthdayActionSelect').val()!=' ' && $('#birthdayeditstatusSelect').val()=='ATTENDED/CELEBRATED'){
+        saveBirthday();
+    }else if($('#birthdayActionSelect').val()!=' ' && $('#birthdayReminderDate').val()!=''){
+        saveBirthday();
+    }else{
+        $('#birthdayEditMessage').html('<p class="uk-alert uk-alert-warning">Please select reminder-date for further followup</p>');
+    }
+});
+
+function saveBirthday(){
+    $.ajax({
+        type: "POST",
+        url: "{{URL::to('/quick/editBirthdayCelebrationFollowup')}}",
+        data:{'birthday_id':$('#birthday_id').val(), "birthdayCommentTxtarea":$("#birthdayCommentArea").val(),
+              'birthdayReminderDate':$('#birthdayReminderDate').val(),'birthdaystatusSelect':$('#birthdayeditstatusSelect').val(),
+              'birthdayAction':$('#birthdayActionSelect').val(),},
+        //data: {'classId': $("#eligibleClassesCbx").val(), 'batchId':$("#batchCbx").val(), "studentId":studentId},
+        dataType:"json",
+        success: function (response)
+        {
+            console.log(response);
+            
+        	if(response.status == "success"){
+
+				$("#birthdayEditMessage").html('<p class="uk-alert uk-alert-success">Followup changed successfully. Please wait till this page reloads</p>');
+				setTimeout(function(){
+                                    //console.log(window.location.href.split('?')[0]);
+				   var path= window.location.href.split('?')[0];
+                                   window.location.href = path+'?tab=ivfollowup';
+                                   window.location.reload(1);
+				}, 4000);
+				
+        	}else{
+        		
+        		$("#introVisitEditMessage").html('<p class="uk-alert uk-alert-danger">Sorry! Followup could not be changed.</p>');
+        	}
+            
+        }
+    }); 
+}
+
+
+$('#followupcalllTypeCbx').change(function(){
+       if(($('#followupcalllTypeCbx').val()=='COMPLAINTS')||($('#followupcalllTypeCbx').val()=='RETENTION')){
+           //disabling iv default followup
+           $('.introvisitfollowup').css('display','none');
+           $('#addIntroVisitSubmit').css('display','none');
+           $('#defaultfollowup').css('display','none');
+            //enabling complaints
+           
+           $('.otherFollowups').css('display','block');
+           
+            console.log('compa');
+       }
+       if($('#followupcalllTypeCbx').val()=='INQUIRY'){
+           if($('#followupTypeCbx').val()==='SETUPIV'){
+         
+           //to hide others
+           $('.introvisitfollowup').css('display','none');
+           $('#addIntroVisitSubmit').css('display','none');
+           $('.otherFollowups').css('display','none');
+          // $('.attendediv').css('display','none');
+           $('#defaultfollowup').css('display','none');
+         
+           $('.introvisitfollowup').css('display','block');
+           $('#addIntroVisitSubmit').css('display','block');
+            if($('#followupkidCbx').val()===null){
+                $('#followupMsg').html('<p class="uk-alert uk-alert-danger">Please add kid to add Intro Visit</p>');
+            }else{
+                $.ajax({
+			type: "POST",
+			url: "{{URL::to('/quick/getStudentDetailsByIdForBatches')}}",
+                        data: {'studentId':$('#followupkidCbx').val()},
+			dataType: 'json',
+			success: function(response){
+                           // console.log(response);
+                            
+                            getEligibleClasses(response.ageYear,response.ageMonth,response.student_gender);
+                        }
+            }); 
+          }
+          }else{
+             $('.introvisitfollowup').css('display','none');
+             $('#addIntroVisitSubmit').css('display','none');
+             $('#defaultfollowup').css('display','none');
+             $('.otherFollowups').css('display','block');
+          }    
+       }else if($('#followupcalllTypeCbx').val()===''){
+           $('.introvisitfollowup').css('display','none');
+           $('#addIntroVisitSubmit').css('display','none');
+           $('#defaultfollowup').css('display','none');
+          $('.otherFollowups').css('display','none');
+          }
+       
+});
+  
+  
+  
+$('#followupTypeCbx').change(function(){
+     if($('#followupTypeCbx').val()===''){
+          if($('#followupcalllTypeCbx').val()===''){
+             $('#defaultfollowup').css('display','block');
+          }else{
+              $('#defaultfollowup').css('display','none');
+          }
+     }
+     if($('#followupcalllTypeCbx').val()=='INQUIRY'){
+        if($('#followupTypeCbx').val()==='SETUPIV'){
+         
+         //to hide others
+         $('.introvisitfollowup').css('display','none');
+         $('#addIntroVisitSubmit').css('display','none');
+         $('.attendediv').css('display','none');
+         $('#defaultfollowup').css('display','none');
+         $('.otherFollowups').css('display','none');
+         
+         $('.introvisitfollowup').css('display','block');
+         $('#addIntroVisitSubmit').css('display','block');
+            if($('#followupkidCbx').val()===null){
+                $('#followupMsg').html('<p class="uk-alert uk-alert-danger">Please add kid to add Intro Visit</p>');
+            }else{
+                $.ajax({
+			type: "POST",
+			url: "{{URL::to('/quick/getStudentDetailsByIdForBatches')}}",
+                        data: {'studentId':$('#followupkidCbx').val()},
+			dataType: 'json',
+			success: function(response){
+                           // console.log(response);
+                            
+                            getEligibleClasses(response.ageYear,response.ageMonth,response.student_gender);
+                        }
+            }); 
+            }
+             
+         
+     }else{
+         $('.introvisitfollowup').css('display','none');
+         $('#addIntroVisitSubmit').css('display','none');
+         $('.attendediv').css('display','none');
+         $('.otherFollowups').css('display','block');
+        
+     }
+     }
+     
+});
+
+$(document).ready(function(){
+        $.ajax({
+			type: "POST",
+			url: "{{URL::to('/quick/getStudentsByCustomerid')}}",
+                        data: {'customer_id':<?php echo $customer->id ?>, },
+			dataType: 'json',
+			success: function(response){
+                            //console.log(response);
+                            if(response.status==='success'){
+                                //console.log(response.student_data[0]['id']);
+                                $('#followupkidCbx').html('');
+                                var data="";
+                                for(var i=0; i<response.student_data.length; i++){
+                               data+= '<option value='+response.student_data[i]['id']+'>'+response.student_data[i]['student_name']+'</option>';
+                                }
+                                //console.log(data);
+                                $('#followupkidCbx').append(data);
+                            }
+                        }
+             });  
+});
+
+
+
+function getSeasons(){
+$.ajax({
+			type: "POST",
+			url: "{{URL::to('/quick/season/getSeasonsForEnrollment')}}",
+                        data: {},
+			dataType: 'json',
+			success: function(response){
+                           // console.log(response.season_data);
+                            
+                            $(".SeasonsCbx").empty("");      	  
+                            string = '';
+                            for(var i=0;i<response.season_data.length;i++){
+                                string += '<option value='+response.season_data[i]['id']+'>'+response.season_data[i]['season_name']+'</option>';
+                            }
+                            
+                            $('.SeasonsCbx').append(string); 
+                           // console.log(string);
+                        }
+             })  ;
+}
+
+$(document).ready(function(){
+    getSeasons();
+
+});
+
+$('#eligibleClassIntro').change(function(){
+    	$.ajax({
+        type: "POST",
+        url: "{{URL::to('/quick/batchesByClassSeasonId')}}",
+        data: {'classId': $('#eligibleClassIntro').val(),'seasonId':$('#SeasonsCbx').val()},
+        dataType:"json",
+        success: function (response)
+        {      	   
+      	  $('#introbatchCbx').empty();      	  
+      	  $string = '<option value=""></option>';
+      	  $.each(response, function (index, item) {
+      		  $string += '<option value='+item.id+'>'+item.batch_name+' '+item.day+'  '+item.start_time+' - '+item.end_time+' '+item.instructor+'</option>';               
+            });
+      	  $('#introbatchCbx').append($string); 
+      	  //$('#introbatchCbx').append($string);
+        }
+    });
+});
+
+$('#SeasonsCbx').change(function(){
+    if($('#eligibleClassIntro').val()!=''){
+     $.ajax({
+        type: "POST",
+        url: "{{URL::to('/quick/batchesByClassSeasonId')}}",
+        data: {'classId': $('#eligibleClassIntro').val(),'seasonId':$('#SeasonsCbx').val()},
+        dataType:"json",
+        success: function (response)
+        {      	   
+      	  $('#introbatchCbx').empty();      	  
+      	  $string = '<option value=""></option>';
+      	  $.each(response, function (index, item) {
+      		  $string += '<option value='+item.id+'>'+item.batch_name+' '+item.day+'  '+item.start_time+' - '+item.end_time+' '+item.instructor+'</option>';               
+            });
+      	  $('#introbatchCbx').append($string); 
+      	  //$('#introbatchCbx').append($string);
+        }
+     }); 
+    }
+});
+
+$("#introVisitTxtBox").kendoDatePicker({	
+    change: function() {
+    	var postData = {"batchId":$("#introbatchCbx").val(), "scheduleDate":$("#introVisitTxtBox").val()};
+    	$.ajax({
+            type: "POST",
+            url: "{{URL::to('/quick/checkSlotAvailableForIntrovisit')}}",
+            data: postData,
+            dataType:"json",
+            success: function (response)
+            {
+          	  	//console.log(response);      	 	
+    			if(response.status == "clear"){
+                                $('#addIntroVisitSubmit').addClass('disabled');
+    				$("#Msg").html('<p class="uk-alert uk-alert-danger">Please select another day. Batch chosen does not have schedule on selected date.</p>');
+    				//$("#KidsformBody").hide();
+    			}else{
+                                $('#addIntroVisitSubmit').removeClass('disabled');
+    				$("#Msg").html("");
+                                
+    			}
+    	     	
+            }
+        });
+    }
+});
+
+$('#addIntroVisitSubmit').click(function(){
+    if(($('#eligibleClassIntro').val()=='')||($('#introbatchCbx').val()=='')||($('#introVisitTxtBox').val()=='')||
+       ($('#followupcalllTypeCbx').val()=='')||($('#followupQualityTypeCbx').val()=='')||($('#eligibleClassIntro').val()=='')||
+       ($('#customerCommentTxt').val()=='')){
+       // console.log('validation error');
+        $("#Msg").html('<p class="uk-alert uk-alert-danger">Please select all required fields </p>');
+    }else{
+        $('#addIntroVisitSubmit').addClass('disabled');
+        //console.log('now register');
+        
+         $.ajax({
+	        type: "POST",
+	        url: "{{URL::to('/quick/addIntroVisit')}}",
+	        data: {'seasonId':$('#SeasonsCbx').val(),'customerId':customerId,'studentIdIntroVisit':$('#followupkidCbx').val(),
+                       'eligibleClassesCbx':$('#eligibleClassIntro').val(),'introbatchCbx':$('#introbatchCbx').val(),
+                       'introVisitTxtBox':$('#introVisitTxtBox').val(),'customerCommentTxtarea':$('#customerCommentTxt').val(),
+                       'followupType':$('#followupcalllTypeCbx').val(),'commentType':$('#followupQualityTypeCbx').val(),   },
+	        //data: {'classId': $("#eligibleClassesCbx").val(), 'batchId':$("#batchCbx").val(), "studentId":studentId},
+	        dataType:"json",
+	        success: function (response)
+	        {
+                        console.log(response);
+	        	if(response.status == "success"){
+	            	
+					$("#Msg").html('<p class="uk-alert uk-alert-success">Introductory visit was added successfully. Please wait till this page reloads</p>');
+					setTimeout(function(){
+					   var path= window.location.href.split('?')[0];
+                                            window.location.href = path+'?tab=ivfollowup';
+                                            window.location.reload(1);
+					}, 5000);
+	        	}else{
+	            	
+					
+	        		$("#Msg").html('<p class="uk-alert uk-alert-danger">Sorry! Introductory visit could not be enrolled.</p>');
+	        	}     	   
+	        }
+	    });
+            
+    }
+
+});
+
+   
+$('#iveditstatusSelect').change(function(){
+  
+  if($('#iveditstatusSelect').val()=='NOT_INTERESTED'){
+      $('#reminderDate').css('display','none');
+      $('#introVisitEditMessage').html("<p class='uk-alert uk-alert-warning'>You are about to close the followupcall </p>");
+  }else if($('#iveditstatusSelect').val()=='ENROLLED'){
+      $('#reminderDate').css('display','none');
+        $('#introVisitEditMessage').html("<p class='uk-alert uk-alert-warning'>You are about to close the followupcall </p>");
+        $('#reminderDate').css('display','none');
+  }else{
+      $('#introVisitEditMessage').html("");
+      $('#reminderDate').css('display','block');
+  }
+});
+
+function selectbirthdaystatus(birthday_id,birthday_followup_status,birthday_comment_type){
+if(birthday_followup_status=='ATTENDED/CELEBRATED'){
+    $('#birthdayreminder').css('display','none');
+}
+if(birthday_followup_status=='NOT_INTERESTED'){
+     $('#birthdayreminder').css('display','none');
+}
+$('#birthday_id').val(birthday_id);
+$('#birthdayeditstatusSelect').val(birthday_followup_status);
+$('#birthdayActionSelect').val(birthday_comment_type);
+$("#birthdayEditForm").show();
+$("#editBirthdayModal").modal('show');
+}
+
+
+
+$('#birthdayeditstatusSelect').change(function(){
+    //console.log('changed');
+   if($('#birthdayeditstatusSelect').val()=='NOT_INTERESTED'){
+      // console.log('working');
+       $('#birthdayreminder').css('display','none');
+       $('#birthdayEditMessage').html("<p class='uk-alert uk-alert-warning'>you are about to close the followupcall </p>");
+   }else
+   if($('#birthdayeditstatusSelect').val()=='ATTENDED/CELEBRATED'){
+       $('#birthdayreminder').css('display','none');
+       $('#birthdayEditMessage').html("<p class='uk-alert uk-alert-warning'>you are about to close the followupcall </p>");
+   }else{
+       $('#birthdayreminder').css('display','block');
+       $('#birthdayEditMessage').html("");
+   } 
+       
+});
+
+
+function getbirthdaydata(birthday_id){
+    
+    
+    $.ajax({
+			type: "POST",
+			url: "{{URL::to('/quick/getBirthdayHistory')}}",
+                        data: {'birthday_id':birthday_id},
+			dataType: 'json',
+			success: function(response){
+                            //console.log(response);
+                            if(response.status=='success'){
+                            var data="<table class='uk-table'>"+
+                                    "<thead>"+
+                                    "<tr>"+
+                                    "<th class='uk-text-nowrap'>FollowupType</th>"+
+                                    "<th class='uk-text-nowrap'>Quality</th>"+
+                                    "<th class='uk-text-nowrap'>Description</th>"+
+                                    "<th class='uk-text-nowrap'>CommentedBy</th>"+
+                                    "</tr>"+
+                                    "</thead>";
+                           for(var i=0;i<response.data.length;i++){
+                                data+="<tr role='row'>"+
+                                        "<td>"+response.data[i]['followup_status']+"</td><td>"+response.data[i]['comment_type']+"</td>"+
+                                        "<td>"+response.data[i]['log_text']+"</td>"+
+                                        "<td>"+response.data[i]['commentor_name']+"</td>"+
+                                        "</tr>";
+                            }
+                            data+="</table>";
+                            //console.log(data);
+                            $('#birthdayhistorybody').html(data);
+                            $('#birthdayhistory').modal('show'); 
+                        }
+                        }
+             });      
+}
+
+
+function getEnrollmentData(paymentfollowupId){
+    //console.log('working');
+     
+  
+    $.ajax({
+			type: "POST",
+			url: "{{URL::to('/quick/getEnrollmetHistory')}}",
+                        data: {'paymentfollowupId':paymentfollowupId},
+			dataType: 'json',
+			success: function(response){
+                            //console.log(response);
+                            if(response.status=='success'){
+                               
+                            var data="<table class='uk-table'>"+
+                                    "<thead>"+
+                                    "<tr>"+
+                                    "<th class='uk-text-nowrap'>FollowupType</th>"+
+                                    "<th class='uk-text-nowrap'>Quality</th>"+
+                                    "<th class='uk-text-nowrap'>Description</th>"+
+                                    "<th class='uk-text-nowrap'>CommentedBy</th>"+
+                                    "</tr>"+
+                                    "</thead>";
+                           for(var i=0;i<response.data.length;i++){
+                                data+="<tr role='row'>"+
+                                        "<td>"+response.data[i]['followup_status']+"</td><td>"+response.data[i]['comment_type']+"</td>"+
+                                        "<td>"+response.data[i]['log_text']+"</td>"+
+                                        "<td>"+response.data[i]['commentor_name']+"</td>"+
+                                        "</tr>";
+                            }
+                            data+="</table>";
+                            //console.log(data);
+                            $('#enrollmenthistorybody').html(data);
+                            $('#enrollmentyhistory').modal('show'); 
+                        }
+                        }
+             });      
+}
+
+
+
+
+$('#addOtherFollowupSubmit').click(function(e){
+   e.preventDefault();       
+  if(($('#SeasonsCbx').val()=='')||($('#followupkidCbx').val()=='')||
+     ($('#followupcalllTypeCbx').val()=='')||($('#followupQualityTypeCbx').val()=='')||
+     ($('#otherCommentTxtarea').val()=='')||($('#remindDate').val()=='')){
+      //error
+      $('#followupMsg').html('<p class="uk-alert uk-alert-warning"> please select all the details to add followup.</p>');
+      
+  }else{
+      //add followup
+      $('#addOtherFollowupSubmit').addClass('disabled');
+      $.ajax({
+			type: "POST",
+			url: "{{URL::to('/quick/createFollowup')}}",
+                        data: {'season_id':$('#SeasonsCbx').val(),'student_id':$('#followupkidCbx').val(),'customer_id':customerId,
+                               'followupType':$('#followupcalllTypeCbx').val(),'comment_type':$('#followupQualityTypeCbx').val(),
+                               'followupstatus':$('#followupTypeCbx').val(),
+                               'otherCommentTxtarea':$('#otherCommentTxtarea').val(),'remindDate':$('#remindDate').val(),},
+			dataType: 'json',
+			success: function(response){
+                            console.log(response.status);
+                            if(response.status=='success'){
+                                $('#followupMsg').html('<p class="uk-alert uk-alert-success">Followup created successfully. please wait till page reloads.</p>');
+                                setTimeout(function(){
+                                    //console.log(window.location.href.split('?')[0]);
+				   var path= window.location.href.split('?')[0];
+                                   window.location.href = path+'?tab=ivfollowup';
+                                   window.location.reload(1);
+				}, 3000);
+                            }else{
+                                $('#followupMsg').html('<p class="uk-alert uk-alert-danger">Followup not created successfully.Try again later</p>');
+                                
+                            }
+                            
+                            
+                            
+                        }
+             });  
+  }
+});
+
+
+
+function getComplaintData(complaintId){
+            $.ajax({
+			type: "POST",
+			url: "{{URL::to('/quick/getComplaintHistoryById')}}",
+                        data: {'complaintId':complaintId},
+			dataType: 'json',
+			success: function(response){
+                         //console.log(response);
+                         if(response.status=='success'){
+                         var data="<table class='uk-table'>"+
+                                    "<thead>"+
+                                    "<tr>"+
+                                    "<th class='uk-text-nowrap'>FollowupType</th>"+
+                                    "<th class='uk-text-nowrap'>Quality</th>"+
+                                    "<th class='uk-text-nowrap'>Description</th>"+
+                                    "<th class='uk-text-nowrap'>CommentedBy</th>"+
+                                    "</tr>"+
+                                    "</thead>";
+                           for(var i=0;i<response.data.length;i++){
+                                data+="<tr role='row'>"+
+                                        "<td>"+response.data[i]['followup_status']+"</td><td>"+response.data[i]['comment_type']+"</td>"+
+                                        "<td>"+response.data[i]['log_text']+"</td>"+
+                                        "<td>"+response.data[i]['commentor_name']+"</td>"+
+                                        "</tr>";
+                            }
+                            data+="</table>";
+                            //console.log(data);
+                            $('#Complianthistorybody').html(data);
+                            $('#complianthistory').modal('show');
+                        }
+                      }
+             });
+}
+
+function selectComplaintstatus(complaintId,complaintStatus,complaintComment_type){
+if(complaintStatus=='CLOSE_CALL'){
+     $('#remDate').hide();
+}
+$('#complainteditstatusSelect').val(complaintStatus);
+$('#complainteditActionSelect').val(complaintComment_type);
+$('#complaint_id').val(complaintId);
+$('#editComplaintModal').modal('show');
+}
+function selectRetentionstatus(retentionId,retentionStatus,retentionComment_type){
+    if(retentionStatus=='CLOSE_CALL'){
+        $('#rmDate').hide();
+    }
+$('#retentioneditstatusSelect').val(retentionStatus);
+$('#retentioneditActionSelect').val(retentionComment_type);
+$('#retention_id').val(retentionId);
+$('#editRetentionModal').modal('show');
+}
+function selectInquirystatus(inquiryId,inquiryStatus,inquiryComment_type){
+    if(inquiryStatus=='CLOSE_CALL'){
+        $('#remdDate').hide();
+    }
+$('#inquiryeditstatusSelect').val(inquiryStatus);
+$('#inquiryeditActionSelect').val(inquiryComment_type);
+$('#inquiry_id').val(inquiryId);
+$('#editInquiryModal').modal('show');
+}
+function selectmembershipstatus(membershipId,membershipStatus,membership_comment_type){
+    if((membershipStatus=='CLOSE_CALL')||(membershipStatus=='NOT_INTERESTED')){
+        $('#membeshipReminderDate').hide();
+    }
+$('#membershipeditstatusSelect').val(membershipStatus);
+$('#membershipeditActionSelect').val(membership_comment_type);
+$('#membership_id').val(membershipId);
+$('#editMembershipModal').modal('show');
+    
+}
+
+$('#membershipeditstatusSelect').change(function(){
+   if(($('#membershipeditstatusSelect').val()=='CLOSE_CALL')||($('#membershipeditstatusSelect').val()=='NOT_INTERESTED')){
+       $('#membershipEditMessage').html('<p class="uk-alert uk-alert-warning">you are about to close the Call</p>');
+       $('#membeshipReminderDate').hide();
+   }else{
+       $('#membeshipReminderDate').show();
+       $('#membershipEditMessage').html('');
+   }
+});
+
+$('#complainteditstatusSelect').change(function(){
+   if($('#complainteditstatusSelect').val()=='CLOSE_CALL') {
+       $('#complaintEditMessage').html('<p class="uk-alert uk-alert-warning">you are about to close the Call</p>');
+       $('#remDate').hide();
+   }else{
+       $('#remDate').show();
+       $('#complaintEditMessage').html('');
+       
+   }
+});
+
+
+$('#saveMembershipBtn').click(function(){
+    if($('#membershipeditActionSelect').val()!=' ' && $('#membershipcustomerCommentTxtarea').val()!=''){
+        
+                if($('#membershipReminderDate').val()!=''||($('#membershipeditstatusSelect').val()=='NOT_INTERESTED')||($('#membershipeditstatusSelect').val()=='CLOSE_CALL')){
+                    
+                    $.ajax({
+			type: "POST",
+			url: "{{URL::to('/quick/updateMembershipFollowup')}}",
+                        data: {'followup_status':$('#membershipeditstatusSelect').val(),'comment_type':$('#membershipeditActionSelect').val(),
+                               'membership_followup_id':$('#membership_id').val(),'remider_date':$('#membershipReminderDate').val(),
+                               'comment':$('#membershipcustomerCommentTxtarea').val()},
+			dataType: 'json',
+			success: function(response){
+                            if(response.status=='success'){
+                                $('#membershipEditMessage').html('<p class="uk-alert uk-alert-success"> Followup is successfully changed. please wait still the page reloads.</p>')
+                               setTimeout(function(){
+                                    //console.log(window.location.href.split('?')[0]);
+				   var path= window.location.href.split('?')[0];
+                                   window.location.href = path+'?tab=ivfollowup';
+                                   window.location.reload(1);
+				}, 3000);
+                            }    
+                        }
+                    });  
+                    
+                }else{
+                               $('#membershipEditMessage').html('<p class="uk-alert uk-alert-danger">please fill reminder date</p>');
+     
+                }
+      
+    }else{
+        $('#membershipEditMessage').html('<p class="uk-alert uk-alert-danger">please fill required details</p>');
+       
+    }
+});
+
+$('#saveComplaintBtn').click(function(){
+ if(($('#complaintstatusSelect').val()!='') && ($('#complainteditActionSelect').val()!='') && 
+         ($('#complaintcustomerCommentTxtarea').val()!='')){
+       //call ajax
+         if($('#rDate').val()!=''||($('#complainteditstatusSelect').val()=='CLOSE_CALL')){
+           $.ajax({
+			type: "POST",
+			url: "{{URL::to('/quick/UpdateFollowup')}}",
+                        data: {'complaint_id':$('#complaint_id').val(),'followup_status':$('#complainteditstatusSelect').val(),
+                               'comment_type':$('#complainteditActionSelect').val(),'customer_text_area':$('#complaintcustomerCommentTxtarea').val(),
+                               'rDate':$('#rDate').val(),},
+			dataType: 'json',
+			success: function(response){
+                            //console.log(response.status);
+                            if(response.status=='success'){
+                                $('#complaintEditMessage').html('<p class="uk-alert uk-alert-success"> Followup is successfully changed. please wait still the page reloads.</p>')
+                               setTimeout(function(){
+                                    //console.log(window.location.href.split('?')[0]);
+				   var path= window.location.href.split('?')[0];
+                                   window.location.href = path+'?tab=ivfollowup';
+                                   window.location.reload(1);
+				}, 3000);
+                            }
+                        }
+             });
+          }else{
+          $('#complaintEditMessage').html('<p class="uk-alert uk-alert-danger">please fill all required details</p>');
+          }
+ } else{
+     $('#complaintEditMessage').html('<p class="uk-alert uk-alert-danger">please fill all required details</p>');
+     
+ }
+});
+
+
+
+$('#saveRetentionBtn').click(function(){
+ if(($('#retentionstatusSelect').val()!='') && ($('#retentioneditActionSelect').val()!='') && 
+         ($('#retentioncustomerCommentTxtarea').val()!='')){
+       //call ajax
+       
+           $.ajax({
+			type: "POST",
+			url: "{{URL::to('/quick/UpdateRetentionFollowup')}}",
+                        data: {'retention_id':$('#retention_id').val(),'followup_status':$('#retentioneditstatusSelect').val(),
+                               'comment_type':$('#retentioneditActionSelect').val(),'customer_text_area':$('#retentioncustomerCommentTxtarea').val(),
+                               'rDate':$('#rmDate').val(),},
+			dataType: 'json',
+			success: function(response){
+                            //console.log(response);
+                            if(response.status=='success'){
+                                $('#retentionEditMessage').html('<p class="uk-alert uk-alert-success"> Followup is successfully changed. please wait still the page reloads.</p>')
+                               setTimeout(function(){
+                                    //console.log(window.location.href.split('?')[0]);
+				   var path= window.location.href.split('?')[0];
+                                   window.location.href = path+'?tab=ivfollowup';
+                                   window.location.reload(1);
+				}, 3000);
+                            }
+                        }
+             });
+ } else{
+     $('#retentionEditMessage').html('<p class="uk-alert uk-alert-danger">please fill all required details</p>');
+     
+ }
+});
+
+
+
+$('#saveInquiryBtn').click(function(){
+ if(($('#inquirystatusSelect').val()!='') && ($('#inquiryeditActionSelect').val()!='') && 
+         ($('#inquirycustomerCommentTxtarea').val()!='')){
+       //call ajax
+       
+           $.ajax({
+			type: "POST",
+			url: "{{URL::to('/quick/UpdateInquiryFollowup')}}",
+                        data: {'inquiry_id':$('#inquiry_id').val(),'followup_status':$('#inquiryeditstatusSelect').val(),
+                               'comment_type':$('#inquiryeditActionSelect').val(),'customer_text_area':$('#inquirycustomerCommentTxtarea').val(),
+                               'rDate':$('#rmdDate').val(),},
+			dataType: 'json',
+			success: function(response){
+                            console.log(response);
+                            if(response.status=='success'){
+                                $('#InquiryEditMessage').html('<p class="uk-alert uk-alert-success"> Followup is successfully changed. please wait still the page reloads.</p>');
+                               setTimeout(function(){
+                                    //console.log(window.location.href.split('?')[0]);
+				   var path= window.location.href.split('?')[0];
+                                   window.location.href = path+'?tab=ivfollowup';
+                                   window.location.reload(1);
+				}, 3000);
+                            }
+                        }
+             });
+ } else{
+     $('#InquiryEditMessage').html('<p class="uk-alert uk-alert-danger">please fill all required details</p>');
+     
+ }
+});
+
+
+function getRetentionData(retentionId){
+            $.ajax({
+			type: "POST",
+			url: "{{URL::to('/quick/getRetentionHistoryById')}}",
+                        data: {'retentionId':retentionId},
+			dataType: 'json',
+			success: function(response){
+                         //console.log(response);
+                         if(response.status=='success'){
+                         var data="<table class='uk-table'>"+
+                                    "<thead>"+
+                                    "<tr>"+
+                                    "<th class='uk-text-nowrap'>FollowupType</th>"+
+                                    "<th class='uk-text-nowrap'>Quality</th>"+
+                                    "<th class='uk-text-nowrap'>Description</th>"+
+                                    "<th class='uk-text-nowrap'>CommentedBy</th>"+
+                                    "</tr>"+
+                                    "</thead>";
+                           for(var i=0;i<response.data.length;i++){
+                                data+="<tr role='row'>"+
+                                        "<td>"+response.data[i]['followup_status']+"</td><td>"+response.data[i]['comment_type']+"</td>"+
+                                        "<td>"+response.data[i]['log_text']+"</td>"+
+                                        "<td>"+response.data[i]['commentor_name']+"</td>"+
+                                        "</tr>";
+                            }
+                            data+="</table>";
+                            //console.log(data);
+                            $('#Retentionhistorybody').html(data);
+                            $('#retentionhistory').modal('show');
+                        }
+                      }
+             });
+}
+
+function getInquiryData(inquiryId){
+     $.ajax({
+			type: "POST",
+			url: "{{URL::to('/quick/getInquiryHistoryById')}}",
+                        data: {'inquiryId':inquiryId},
+			dataType: 'json',
+			success: function(response){
+                         //console.log(response);
+                         if(response.status=='success'){
+                         var data="<table class='uk-table'>"+
+                                    "<thead>"+
+                                    "<tr>"+
+                                    "<th class='uk-text-nowrap'>FollowupType</th>"+
+                                    "<th class='uk-text-nowrap'>Quality</th>"+
+                                    "<th class='uk-text-nowrap'>Description</th>"+
+                                    "<th class='uk-text-nowrap'>CommentedBy</th>"+
+                                    "</tr>"+
+                                    "</thead>";
+                           for(var i=0;i<response.data.length;i++){
+                                data+="<tr role='row'>"+
+                                        "<td>"+response.data[i]['followup_status']+"</td><td>"+response.data[i]['comment_type']+"</td>"+
+                                        "<td>"+response.data[i]['log_text']+"</td>"+
+                                        "<td>"+response.data[i]['commentor_name']+"</td>"+
+                                        "</tr>";
+                            }
+                            data+="</table>";
+                            //console.log(data);
+                            $('#Inquiryhistorybody').html(data);
+                            $('#inquiryhistory').modal('show');
+                        }
+                      }
+             });
+}
+
+function viewhistory(membershipId){
+
+    $.ajax({
+			type: "POST",
+			url: "{{URL::to('/quick/getFollowupByMembershipId')}}",
+                        data: {'membership_id':membershipId},
+			dataType: 'json',
+			success: function(response){
+                            //console.log(response);
+                            var data="<table class='uk-table'>"+
+                                    "<thead>"+
+                                    "<tr>"+
+                                    "<th class='uk-text-nowrap'>FollowupType</th>"+
+                                    "<th class='uk-text-nowrap'>Quality</th>"+
+                                    "<th class='uk-text-nowrap'>Description</th>"+
+                                    "<th class='uk-text-nowrap'>CommentedBy</th>"+
+                                    "</tr>"+
+                                    "</thead>";
+                            for(var i=0;i<response.historyData.length;i++){
+                                data+="<tr role='row'>"+
+                                        "<td>"+response.historyData[i]['followup_status']+"</td><td>"+response.historyData[i]['comment_type']+"</td>"+
+                                        "<td>"+response.historyData[i]['log_text']+"</td>"+
+                                        "<td>"+response.historyData[i]['commentor_name']+"</td>"+
+                                        "</tr>";
+                            }
+                            data+="</table>";
+                            
+                            $('#Membershiphistorybody').html(data); 
+                            $('#membershiphistory').modal('show');
+                        }
+            });  
+    
+}
+
+$('#inquiryeditstatusSelect').change(function(){
+if($('#inquiryeditstatusSelect').val()==='CLOSE_CALL'){
+    $('#inquiryEditMessage').html('<p class="uk-alert uk-alert-warning">you are about to close the Call</p>');
+    $('#remdDate').hide();
+}else{
+    $('#remdDate').show();
+     $('#inquiryEditMessage').html('');
+}
+
+});
+
+$('#pendingclose').click(function(){
+   $('#pendingamountpay').modal('hide');
+});
+
+
+$('#retentioneditstatusSelect').change(function(){
+if($('#retentioneditstatusSelect').val()=='CLOSE_CALL'){
+   
+   $('#renDate').hide(); 
+}else{
+   $('#renDate').show();
+}
+});
+
+
+$("input[name='birthdayPaymentTypeRadio']").change(function(){
+        
+      if($("input[name='birthdayPaymentTypeRadio']:checked").val()==='card'){
+          
+           //deactivate previous required
+          $('#birthdayChequeBankName').prop('required',false);
+          $('#birthdayChequeNumber').prop('required',false);
+          
+         
+        //activate present
+          
+          
+         // $('#birthdayPartyCreateBtn').addClass('disabled');
+          $('#birthdayCardType').prop('required',true);
+          $('#birthdayCardBankName').prop('required',true);
+          $('#birthdayCard4digits').prop('required',true);
+          $('#cardRecieptNumber').prop('required',true);
+         $('#birthdayCardDetailsDiv').css('display','block');
+         $('#birthdayChequeDetails').css('display','none');
+         
+      }
+     if($("input[name='birthdayPaymentTypeRadio']:checked").val()==='cheque'){
+         //deactivate previous required
+          $('#birthdayCardType').prop('required',false);
+          $('#birthdayCardBankName').prop('required',false);
+          $('#birthdayCard4digits').prop('required',false);
+          $('#cardRecieptNumber').prop('required',false);
+          
+          //for present data
+          $('#birthdayChequeBankName').prop('required',true);
+          $('#birthdayChequeNumber').prop('required',true);
+          $('#birthdayChequeDetails').css('display','block');
+          $('#birthdayCardDetailsDiv').css('display','none');
+         
+      }
+      if($("input[name='birthdayPaymentTypeRadio']:checked").val()==='cash'){
+           //deactivating if previous exists
+           $('#birthdayChequeBankName').prop('required',false);
+           $('#birthdayChequeNumber').prop('required',false);
+           $('#birthdayCardType').prop('required',false);
+           $('#birthdayCardBankName').prop('required',false);
+           $('#birthdayCard4digits').prop('required',false);
+           $('#cardRecieptNumber').prop('required',false);
+          
+           
+           $('#birthdayCardDetailsDiv').css('display','none');
+           $('#birthdayChequeDetails').css('display','none');
+          // $('#birthdayCardDetailsDiv').css('display','none');
+      }
+        
+ 
+});
+
 </script>
 @stop
 @section('content')
 <div id="breadcrumb">
 	<ul class="crumbs">
 		<li class="first"><a href="{{url()}}" style="z-index:9;"><span></span>Home</a></li>
-		<li><a href="{{url()}}/customers" style="z-index:8;">Customers</a></li>
+		<li><a href="{{url()}}/customers/memberslist" style="z-index:8;">Customers</a></li>
 		<li><a href="#" style="z-index:7;">{{$customer->customer_name}}</a></li>
 	</ul>
 </div>
@@ -638,8 +2369,10 @@ function pendingamount(pendingamountId,pendingAmount){
                                 <img src="{{url()}}/upload/profile/customer/{{$customer->profile_image}}"/>
                             </div>
                             <div class="user_heading_content">
+                                <div class="row">
+                                <div class="col-md-5">
                                 <h2 class="heading_b uk-margin-bottom"><span class="uk-text-truncate">
-                                	{{$customer->customer_name}} 
+                                	{{$customer->customer_name}}{{$customer->customer_lastname}} 
                                 	<?php if($customerMembership){?>
                                 		<span class="new badge" style="background-color: #7CB342">{{$customerMembership->name}} Membership</span> 
                                 	
@@ -647,11 +2380,7 @@ function pendingamount(pendingamountId,pendingAmount){
                                 		<span class="new badge" style="background-color:#B10909">Not a member</span> 
                                 	<?php }?>
                                 	<span id="stageChange" class="new badge" style="background-color: #7CB342;">{{ucfirst($customer->stage)}}</span>
-                                	
-                                	
-                                	
-                                	</span>
-                                	
+                                	</span>                      
                                	</h2>
                                 <ul class="user_stats">
                                     <li>
@@ -660,20 +2389,54 @@ function pendingamount(pendingamountId,pendingAmount){
                                     <li>
                                         <h4 class="heading_a">{{$customer->mobile_no}} <span class="sub-heading">Mobile</span></h4>
                                     </li>
+                                    
                                   
                                 </ul>
+                                </div>
+                               <div class="col-md-5">
+                                   <?php if(count($customer_student_data)>0){ ?>
+                                    <table class='uk-table dataTable no-footer' id='enrolledtable'>
+                                        <tbody>
+                                        <tr>
+                                        <th>StudnetName&nbsp; </th>
+                                        <th>BatchName&nbsp; </th>
+                                        <th>Startdate&nbsp; </th>
+                                        <th>Enddate&nbsp; </th>
+                                        </tr>
+                                        <?php for($i=0;$i<count($customer_student_data);$i++){?>
+                                        <tr>
+                                            <td><a  style="color:white" href="{{url()}}/students/view/{{$customer_student_data[$i]->id}}">{{$customer_student_data[$i]->student_name}}&nbsp;</a></td>
+                                            <?php if(count($customer_student_data[$i]->student_classes_data)>0){?>
+                                            <td>{{$customer_student_data[$i]->student_classes_data[0]['batch_name']}}&nbsp;</td>
+                                            <td>{{$customer_student_data[$i]->student_classes_data[0]['enrollment_start_date']}}&nbsp;</td>
+                                            <td>{{$customer_student_data[$i]->student_classes_data[0]['enrollment_end_date']}}&nbsp;
+                                            </td>
+                                            <?php }?>
+                                        </tr>
+                                        <?php }?>
+                                        </tbody>
+                                        
+                                    </table>
+                                   <?php }?>
+                                </div>
+                                </div>
+                                
                             </div>
+                            
                             <a class="md-fab md-fab-small md-fab-accent" id="editCustomerBtn">
-                                <i class="material-icons">&#xE150;</i>
-                            </a>
+                                    <i class="material-icons">&#xE150;</i>
+                                </a>
+                            
                         </div>
                         <div class="user_content">
                             <ul id="user_profile_tabs" class="uk-tab" data-uk-tab="{connect:'#user_profile_tabs_content', animation:'slide-horizontal'}" data-uk-sticky="{ top: 48, media: 960 }">
                                 <li id="customerInfoTabMenu" class="uk-active"><a href="#">About</a></li>
-                                <li id="customerMembershipInfoTabMenu" class=""><a href="#">Membership</a></li>
+                               <!-- <li id="customerMembershipInfoTabMenu" class=""><a href="#">Membership</a></li> -->
                                 <li id="studentInfoTabMenu" class=""><a href="#">Kids</a></li> 
                                 <li id="birthdayPartyInfoTabMenu"><a>Birthday Parties</a></li>
                                 <li id="commentsInfoTabMenu" class="" data-target="#commentsandlogsdivTab"><a href="#" data-target="#commentsandlogsdivTab">Comments and logs</a></li> 
+                                <li id="followupTabMenu" class="" data-target="#followupTab"><a href="#" data-target="#followupTab">Followup</a></li> 
+                               
                             </ul>
                             <ul id="user_profile_tabs_content" class="uk-switcher uk-margin">
                                 <li id="customerInfoTab"> 
@@ -784,6 +2547,7 @@ function pendingamount(pendingamountId,pendingAmount){
                                         </div>
                                         
                                 </li>
+                                <!--
                                 <li id="customerMembershipInfoTab">
                                 
                                 <?php 
@@ -791,7 +2555,7 @@ function pendingamount(pendingamountId,pendingAmount){
                                		print_r($customerMembership);
                                 	echo '</pre>'; */
                                 	
-                                	if($customerMembership){
+                                	//if($customerMembership){
                                 
                                 ?>
                                 		<ul class="md-list md-list-addon">
@@ -800,7 +2564,7 @@ function pendingamount(pendingamountId,pendingAmount){
                                                         <i class="md-list-addon-icon material-icons">verified_user</i>
                                                     </div>
                                                     <div class="md-list-content">
-                                                        <span class="md-list-heading">{{$customerMembership->name}}  </span>
+                                                        <span class="md-list-heading">{{--$customerMembership->name--}}  </span>
                                                         <span class="uk-text-small uk-text-muted">Current membership</span>
                                                     </div>
                                                 </li>
@@ -809,14 +2573,15 @@ function pendingamount(pendingamountId,pendingAmount){
                                 
                                 
                                 <?php 
-                                	}else{
+                                	//}else{
                                 
                                 ?>
                                 
                                 
                                 <p class="uk-alert uk-alert-warning">No membership found.</p>
-                                <?php $url = '/customers/view/'.$customer->id;?>
-                                {{ Form::open(array('files'=> true,'url' => $url, 'id'=>"addCustomerForm", "class"=>"uk-form-stacked", 'method' => 'post')) }}
+                                <?php //$url = '/customers/view/'.$customer->id; 
+                                ?>
+                                {{-- Form::open(array('files'=> true,'url' => $url, 'id'=>"addCustomerForm", "class"=>"uk-form-stacked", 'method' => 'post')) --}}
                                 <br clear="all"/><br clear="all"/>
 							         <h4>Membership details</h4>
 							         <br clear="all"/>
@@ -918,9 +2683,9 @@ function pendingamount(pendingamountId,pendingAmount){
 										</div>
 									{{Form::close()}}
                                 <?php 
-                                	}
+                                //	}
                                 ?>
-                                
+                                -->
                                 
                                 </li>
                                 <li id="studentInfoTab">
@@ -994,9 +2759,14 @@ function pendingamount(pendingamountId,pendingAmount){
 		                                ?>
 		                               
 		                               <br clear="all"/>
-		                                <a class="md-fab md-fab-accent" id="addKids" href="#" style="float:right">
+                                               <a class="md-fab md-fab-accent" id="addKids" href="#" style="float:right">
 								            <i class="material-icons">&#xE145;</i>
-								        </a>
+                                               </a>
+		                                <!--
+                                                <a class="md-fab md-fab-accent" id="addKids" href="#" style="float:right">
+								            <i class="material-icons">&#xE145;</i>
+                                                </a>
+                                                -->
 		                               	<br clear="all"/>
 		                               	<br clear="all"/>
 		                               	<br clear="all"/>
@@ -1019,7 +2789,7 @@ function pendingamount(pendingamountId,pendingAmount){
 													<div class="uk-width-medium-1-2">
 														<div class="parsley-row" style="margin-top: -23px;">
 															<label for="birthdayMonth">Select Birthday Month<span
-																class="req">*</span></label> <br clear="all" />
+																class="req">*</span></label> <br/>(MM/DD/YYYY)<br clear="all" />
 															{{Form::text('birthdayMonth',
 															null,array('id'=>'birthdayMonth','required', 'class' => ''))}}
 														</div>
@@ -1175,7 +2945,104 @@ function pendingamount(pendingamountId,pendingAmount){
 																	</td>
 																</tr>
                                                                                                                                 <tr>
-                                                                                                                                    <td>
+                                                                                                                                    
+                                                                                                                                        <div id="birthdayPaymentType" class="uk-grid" data-uk-grid-margin>
+                                                                                                                                        <div class="uk-width-medium-1-2">
+                                                                                                                                      		<div class="parsley-row">
+                                                                                                                                                	<input type="radio" name="birthdayPaymentTypeRadio" required
+                                                                                                                                                                accept="" id="birthdayPaymentOptions" value="card" /> <label
+                                                                                                                                                                accesskey=""for="birthdayPaymentOptions" class="inline-label">Card</label> <input required
+                                                                                                                                                                accesskey=""accept=""type="radio" name="birthdayPaymentTypeRadio" id="birthdayPaymentOptions1"
+                                                                                                                                                                alt="" value="cash" /> <label for="birthdayPaymentOptions1"
+                                                                                                                                                                accesskey=""class="inline-label">Cash</label> <input type="radio" required
+                                                                                                                                                                accept=""name="birthdayPaymentTypeRadio" id="birthdayPaymentOptions2" value="cheque" />
+                                                                                                                                                        <label for="birthdayPaymentOptions2" class="inline-label">Cheque</label>
+                                                                                                                                                </div>
+                                                                                                                                        </div>
+                                                                                                                                        <div class="uk-width-medium-1-2">
+                                                                                                                                                
+                                                                                                                                        </div>
+                                                                                                                                        </div>
+                                                                                                                                   
+                                                                                                                                
+                                                                                                                                    
+                                                                                                                                        <div id="birthdayPaymentType" style="width: 100%">
+                                                                                                                                            <div id="birthdayCardDetailsDiv" class="uk-grid" data-uk-grid-margin style="display:none">
+                                                                                                                                                <div class="uk-width-medium-1-1">
+                                                                                                                                                    <h4>Card details</h4>
+                                                                                                                                                </div>
+                                                                                                                                                <div class="uk-width-medium-1-2">
+                                                                                                                                                    <div class="parsley-row">
+                                                                                                                                                        <select name="birthdayCardType" id="birthdayCardType"
+                                                                                                                                                                accesskey=""class="input-sm md-input"
+                                                                                                                                                                autocomplete=""class="form-control input-sm md-input"
+                                                                                                                                                                contenteditable=""autofocus=""style='padding: 0px; font-weight: bold; color: #727272;'>
+                                                                                                                                                            <option value="master">Master card</option>
+                                                                                                                                                            <option value="maestro">Maestro</option>
+                                                                                                                                                            <option value="visa">Visa</option>
+                                                                                                                                                            <option value="Rupay">Rupay</option>
+                                                                                                                                                        </select>
+                                                                                                                                                    </div>
+                                                                                                                                                </div>
+                                                                                                                                                <div class="uk-width-medium-1-2">
+                                                                                                                                                    <div class="parsley-row">
+                                                                                                                                                        <label for="birthdayCard4digits" class="inline-label">Last 4 digits
+                                                                                                                                                            of your card<span class="req">*</span>
+                                                                                                                                                        </label> <input id="card4digits" number name="birthdayCard4digits"
+                                                                                                                                                           accept=""maxlength="4" type="text"
+                                                                                                                                                           accesskey=""class="form-control input-sm md-input" />
+                                                                                                                                                    </div>
+                                                                                                                                                </div>
+									
+                                                                                                                                                <div class="uk-width-medium-1-2">
+                                                                                                                                                    <div class="parsley-row">
+                                                                                                                                                        <label for="birthdayCardBankName" class="inline-label">Bank Name of your card<span class="req">*</span>
+                                                                                                                                                        </label> <input id="birthdayCardBankName" number name="birthdayCardBankName"
+                                                                                                                                                               accept=""type="text"
+                                                                                                                                                               accesskey=""class="form-control input-sm md-input" />
+                                                                                                                                                    </div>
+                                                                                                                                                </div>
+									
+                                                                                                                                                <div class="uk-width-medium-1-2">
+                                                                                                                                                    <div class="parsley-row">
+                                                                                                                                                        <label for="birthdayCardRecieptNumber" class="inline-label">Reciept number<span class="req">*</span>
+                                                                                                                                                        </label> <input id="cardRecieptNumber" number name="birthdayCardRecieptNumber"
+                                                                                                                                                        accept=""maxlength="4" type="text" 
+                                                                                                                                                        accesskey=""class="form-control input-sm md-input" />
+                                                                                                                                                    </div>
+                                                                                                                                                </div>
+
+                                                                                                                                            </div>
+                                                                                                                                            <div id="birthdayChequeDetails" class="uk-grid" data-uk-grid-margin style="display:none">
+
+                                                                                                                                                <div class="uk-width-medium-1-1">
+                                                                                                                                                    <h4>Cheque details</h4>
+                                                                                                                                                    <br clear="all"/>
+                                                                                                                                                </div>
+                                                                                                                                                <br clear="all"/><br clear="all"/>
+                                                                                                                                                <div class="uk-width-medium-1-2">
+                                                                                                                                                    <div class="parsley-row">
+                                                                                                                                                        <label for="birthdayChequeBankName" class="inline-label">Bank name<span
+                                                                                                                                                                accesskey=""class="req">*</span></label> <input id="birthdayChequeBankName"
+                                                                                                                                                                       accept=""name="birthdayBankName" type="text"
+                                                                                                                                                                       accesskey=""class="form-control input-sm md-input" />
+                                                                                                                                                    </div>
+                                                                                                                                                </div>
+                                                                                                                                                <div class="uk-width-medium-1-2">
+                                                                                                                                                    <div class="parsley-row">
+                                                                                                                                                        <label for="birthdayChequeNumber" class="inline-label">Cheque number<span
+                                                                                                                                                                accesskey=""class="req">*</span></label> <input id="birthdayChequeNumber"
+                                                                                                                                                                accept=""name="birthdayChequeNumber" type="text"
+                                                                                                                                                                accesskey=""class="form-control input-sm md-input" />
+                                                                                                                                                    </div>
+                                                                                                                                                </div>
+                                                                                                                                            </div>                                                                     
+                                                                                                                                        </div>
+                                                                                                                                        
+                                                                                                                                    
+                                                                                                                                </tr>
+                                                                                                                                <tr>
+                                                                                                                                    <td colspan="2">
                                                                                                                                         <div id="emailEnrollPrintDiv" class="uk-grid" data-uk-grid-margin>
 
                                                                                                                                 		<div class="uk-width-medium-1-1">
@@ -1200,12 +3067,13 @@ function pendingamount(pendingamountId,pendingAmount){
                                                                                                                                                 -->
                                                                                                                                         </div>
                                                                                                                                     </td>
+                                                                                                                                    <td></td>
                                                                                                                                 </tr>
 																<tr>
-																	<td colspan="2"></td>
+                                                                                                                                        <td colspan="2"></td>
 																	<td>
 																		<button type="submit" id="birthdayPartyCreateBtn" class="md-btn md-btn-primary" style="float:right;">Add Birthday party</button>
-																	</td>															
+                                                                                                                                        </td>            
 																</tr>
 															</tbody>
 													</table>
@@ -1381,20 +3249,21 @@ function pendingamount(pendingamountId,pendingAmount){
 		                           			<div id="commentMsgDiv">
 		                           			
 		                           			</div>
+                                                                        
 							             	<div class="uk-width-medium-1-1">							             		 
 								                 <div class="parsley-row">
 								                 	<label for="customerCommentTxtarea">Comment<span class="req">*</span></label> 
 								                 	{{ Form::textarea('customerCommentTxtarea', null, ['id'=>'customerCommentTxtarea', 'size' => '50x3',  'class' => 'form-control input-sm md-input']) }}
 								                 </div><br>
 								            </div>     
-								            <div class="uk-width-medium-1-3">
-								                 <div class="parsley-row">
+                                                                            <div class="uk-width-medium-1-3" >
+								                 <div class="parsley-row" style="display:none;">
 								                 	<label for="reminderTxtBox">Reminder date<span class="req">*</span></label> 
 								                 	{{Form::text('reminderTxtBox', null,array('id'=>'reminderTxtBox', 'required', 'class' => ''))}}								                 	
 								                 </div>
 								            </div>
 								            <div class="uk-width-medium-1-3">
-							                 <div class="parsley-row">
+							                 <div class="parsley-row" style="display:none;">
 								                 	<label for="commentType">Comment Type<span class="req">*</span></label>
 								                 	<!-- array('' => '', 'followup' => 'Followup', 'attended_iv' => 'Attended IV', 'iv_no_show' => 'IV No show', 'missed_call' => 'Missed Call') -->
 								                 	{{ Form::select('commentType', array('' => '', 'FOLLOW_UP' => 'Follow up', 'CALL_BACK' => 'Call back', 'NOT_REACHABLE' => 'Not reachable', 'NOT_PICKING_UP' => 'Not Picking up', 'NOT_INTERESTED' => 'Not Interested', 'MISSED_CALL' => 'Missed Call'), null ,array('id'=>'commentType', 'class' => 'input-sm md-input',  "required", "placeholder"=>"Institution type", "style"=>'padding:0px; font-weight:bold;color: #727272;')) }}
@@ -1447,6 +3316,299 @@ function pendingamount(pendingamountId,pendingAmount){
                                         </ul>
                                         <?php }?>                        
 		                           </li>  
+                                           <li id="followupTab">
+                                               <div class="uk-grid" data-uk-grid-margin>
+		                           			<div  class="uk-width-small-1-1" id="followupMsg">
+		                           			
+		                           			</div>
+                                                                  <br clear="all">
+                                                                  
+                                                                
+                                                                  
+                                                                  <div class="uk-width-small-1-1" id="Msg"></div>
+                                                                  
+                                                                     <div class="uk-width-medium-1-3">
+                                                                              <div class="parsley-row">
+                                                                            	<label for="SeasonsCbx">Seasons<span
+										class="req">*</span></label><br>
+                                                                               <select id="SeasonsCbx"
+										name="SeasonsCbx" required
+										class='SeasonsCbx form-control input-sm md-input'
+										style="padding: 0px; font-weight: bold; color: #727272;">
+										
+                                                                              </select>
+							        	      </div>
+							            </div>
+                                                                  <div class="uk-width-medium-1-3" >
+                                                                         <div class="parsley-row">
+										<label for="followupkidCbx">select kid<span
+											class="req">*</span></label> <br><select id="followupkidCbx"
+											name="followupkidCbx" required
+											class="followupkidCbx form-control input-sm md-input"
+											style="padding: 0px; font-weight: bold; color: #727272;">
+											<option value=""></option>
+										</select>
+									 </div>
+                                                                    </div>
+                                                                   <div class="uk-width-small-1-1"></div>
+                                                                  <br clear="all">
+                                                                    <div class="uk-width-medium-1-3">
+                                                                             <div class="parsley-row">
+								                 	<label for="followupcalllTypeCbx">Type of call<span class="req">*</span></label>
+								                 	<!-- array('' => '', 'followup' => 'Followup', 'attended_iv' => 'Attended IV', 'iv_no_show' => 'IV No show', 'missed_call' => 'Missed Call') -->
+								                 	{{ Form::select('followupcalllTypeCbx', array('' => '', 'INQUIRY' => 'Inquiry', 'RETENTION' => 'Retention', 'COMPLAINTS' => 'Complaints',/*'ENROLLMENT' => 'Enrollment','PAYMENT'=>'Payment',*/  ), null ,array('id'=>'followupcalllTypeCbx', 'class' => 'input-sm md-input',  "required", "placeholder"=>"Institution type", "style"=>'padding:0px; font-weight:bold;color: #727272;')) }}
+								             </div>
+                                                                        <br>
+                                                                    </div>  
+                                                                  
+                                                                    <div class="uk-width-medium-1-3">
+                                                                             <div class="parsley-row">
+								                 	<label for="followupTypeCbx">Followup Type<span class="req">*</span></label>
+								                 	<!-- array('' => '', 'followup' => 'Followup', 'attended_iv' => 'Attended IV', 'iv_no_show' => 'IV No show', 'missed_call' => 'Missed Call') -->
+								                 	{{ Form::select('followupTypeCbx', array('' => '', 'SETUPIV' => 'SetUpIV', //'CANCELIV' => 'CancelIV','ATTENDEDIV' => 'AttendedIV', 'RESCHEDULEIV' => 'RescheduleIV','CLOSEIV' => 'CloseIV',
+                                                                                                                                 'REMINDER_CALL' => 'ReminderCall','FOLLOW_CALL' => 'Follow Call','CALL_SPOUSE' => 'Call Spouse','NOT_AVAILABLE' => 'Not Available','NOT_INTERESTED' => 'Not Interested',
+                                                                                                                                 'ENROLLED' => 'Enrolled',), null ,array('id'=>'followupTypeCbx', 'class' => 'input-sm md-input',  "required", "placeholder"=>"Institution type", "style"=>'padding:0px; font-weight:bold;color: #727272;')) }}
+								             </div>
+                                                                        <br>
+                                                                    </div>
+                                                                    <div class="uk-width-medium-1-3">
+                                                                             <div class="parsley-row">
+								                 	<label for="followupQualityTypeCbx">Quality<span class="req">*</span></label>
+								                 	<!-- array('' => '', 'followup' => 'Followup', 'attended_iv' => 'Attended IV', 'iv_no_show' => 'IV No show', 'missed_call' => 'Missed Call') -->
+								                 	{{ Form::select('followupQualityTypeCbx', array('' => '', 'VERYINTERESTED' => 'Very Interested', 'INTERESTED' => 'Interested', 'NOTSURE' => 'Not Sure','NEEDTOCHECK'=>'Need To Check','NOTINTERESTED' => 'Not Interested',  ), null ,array('id'=>'followupQualityTypeCbx', 'class' => 'input-sm md-input',  "required", "placeholder"=>"Institution type", "style"=>'padding:0px; font-weight:bold;color: #727272;')) }}
+								             </div>
+                                                                        <br>
+                                                                    </div>
+                                                                    
+                                                                  <!--
+                                                                    <div class="uk-width-medium-1-3">
+                                                                         <div class="parsley-row">
+										<label for="actionCbx">Action<span
+											class="req">*</span></label> <select id="actionCbx"
+											name="actionCbx" required
+											class="actionCbx form-control input-sm md-input"
+											style="padding: 0px; font-weight: bold; color: #727272; width: 100%">
+											<option value=""></option>
+										</select>
+									 </div>
+                                                                    </div>
+                                                                  -->
+                                                                  
+                                                                  <div class="uk-width-small-1-1"></div> 
+                                                                <!-- for default view -->
+                                                                   <div class="uk-width-medium-1-1" id="defaultfollowup">
+                                                                        
+                                                                        <div class="md-card">
+                                                                            <div class="md-card-content">
+                                                                                <div class="uk-overflow-container">
+                                                                                    <table class="uk-table" id="followuptable"> 
+                                                                                     <thead>
+                                                                                         <tr>
+                                                                                             <th class="uk-text-nowrap">KidName</th>
+                                                                                             <th class="uk-text-nowrap">CallType</th>
+                                                                                             <th class="uk-text-nowrap">IV/Birthday/Payment Date</th>
+                                                                                             <th class="uk-text-nowrap">Followup</th>
+                                                                                             <!--<th class="uk-text-nowrap">Description</th>-->
+                                                                                             <th class="uk-text-nowrap">ReminderDate</th>
+                                                                                             <th class="uk-text-nowrap">Action</th>
+                                                                                            
+                                                                                         </tr>
+                                                                                     </thead>
+                                                                                     <tbody>
+                                                                                       <?php  if(isset($iv_data)){ for($i=0;$i<count($iv_data);$i++){?>
+                                                                                         <tr>
+                                                                                             <td>{{ $iv_data[$i]['student_name']}}</td>
+                                                                                             <td>Inrovisit:{{ $iv_data[$i]['comment_data']['followup_type']}}</td>
+                                                                                             <td> {{$iv_data[$i]['iv_date']}}</td>
+                                                                                             <td>{{$iv_data[$i]['comment_data']['comment_type']}}</td>
+                                                                                             <!--<td>{{$iv_data[$i]['comment_data']['log_text']}}</td>-->
+                                                                                             <td>{{$iv_data[$i]['comment_data']['reminder_date']}}</td>
+                                                                                             <td> <a href="#" class="btn btn-xs btn-warning" onclick="getivdata({{$iv_data[$i]['id']}})" >History</a>
+                                                                                                   <a href="#" class="btn btn-xs btn-primary" onclick="selectstatus({{$iv_data[$i]['id']}},'{{$iv_data[$i]['comment_data']['followup_status']}}','{{$iv_data[$i]['comment_data']['comment_type']}}')">Edit</a>
+                                                                                             </td>
+                                                                                         </tr>
+                                                                                         
+                                                                                       <?php }} if(isset($birthday_data)){ for($i=0;$i<count($birthday_data);$i++){ ?>
+                                                                                         <tr>
+                                                                                             <td>{{ $birthday_data[$i]['student_name']}}</td>
+                                                                                             <td>Birthday:{{$birthday_data[$i]['comment_data']['followup_type']}}</td>
+                                                                                             <td>{{$birthday_data[$i]['birthday_party_date']}}</td>
+                                                                                             <td>{{$birthday_data[$i]['comment_data']['comment_type']}}</td>
+                                                                                             <!--<td>{{$birthday_data[$i]['comment_data']['log_text']}}</td>-->
+                                                                                             <td>{{$birthday_data[$i]['comment_data']['reminder_date']}}</td>
+                                                                                             <td> <a href="#" class="btn btn-xs btn-warning" onclick="getbirthdaydata({{$birthday_data[$i]['id']}})" >History</a>
+                                                                                                   <a href="#" class="btn btn-xs btn-primary" onclick="selectbirthdaystatus({{$birthday_data[$i]['id']}},'{{$birthday_data[$i]['comment_data']['followup_status']}}','{{$birthday_data[$i]['comment_data']['comment_type']}}')">Edit</a>
+                                                                                             </td>
+                                                                                         </tr>
+                                                                                       <?php }} ?>
+                                                                                       <?php if(isset($complaint_data)){ for($i=0;$i<count($complaint_data);$i++){?> 
+                                                                                         <tr>
+                                                                                             <td>{{$complaint_data[$i]['student_name']}}</td>
+                                                                                             <td>{{$complaint_data[$i]['comments']['followup_type']}}</td>
+                                                                                             <td></td>
+                                                                                             <td>{{$complaint_data[$i]['comments']['comment_type']}}</td>
+                                                                                             <td>{{$complaint_data[$i]['comments']['reminder_date']}}</td>
+                                                                                             <td>
+                                                                                                 <a href="#" class="btn btn-xs btn-warning" onclick="getComplaintData({{$complaint_data[$i]['id']}})" >History</a>
+                                                                                                 <a href="#" class="btn btn-xs btn-primary" onclick="selectComplaintstatus({{$complaint_data[$i]['id']}},'{{$complaint_data[$i]['comments']['followup_status']}}','{{$complaint_data[$i]['comments']['comment_type']}}')">Edit</a>
+                                                                                             </td>
+                                                                                         </tr>
+                                                                                       <?php }}?>
+                                                                                       <?php if(isset($retention_data)){ for($i=0;$i<count($retention_data);$i++){?> 
+                                                                                         <tr>
+                                                                                             <td>{{$retention_data[$i]['student_name']}}</td>
+                                                                                             <td>{{$retention_data[$i]['comments']['followup_type']}}</td>
+                                                                                             <td></td>
+                                                                                             <td>{{$retention_data[$i]['comments']['comment_type']}}</td>
+                                                                                             <td>{{$retention_data[$i]['comments']['reminder_date']}}</td>
+                                                                                             <td>
+                                                                                                 <a href="#" class="btn btn-xs btn-warning" onclick="getRetentionData({{$retention_data[$i]['id']}})" >History</a>
+                                                                                                 <a href="#" class="btn btn-xs btn-primary" onclick="selectRetentionstatus({{$retention_data[$i]['id']}},'{{$retention_data[$i]['comments']['followup_status']}}','{{$retention_data[$i]['comments']['comment_type']}}')">Edit</a>
+                                                                                             </td>
+                                                                                         </tr>
+                                                                                       <?php }}?>
+                                                                                       <?php if(isset($inuiry_data)){ for($i=0;$i<count($inuiry_data);$i++){?> 
+                                                                                         <tr>
+                                                                                             <td></td>
+                                                                                             <td>{{$inuiry_data[$i]['comments']['followup_type']}}</td>
+                                                                                             <td></td>
+                                                                                             <td>{{$inuiry_data[$i]['comments']['comment_type']}}</td>
+                                                                                             <td>{{$inuiry_data[$i]['comments']['reminder_date']}}</td>
+                                                                                             <td>
+                                                                                                 <a href="#" class="btn btn-xs btn-warning" onclick="getInquiryData({{$inuiry_data[$i]['id']}})" >History</a>
+                                                                                                 <a href="#" class="btn btn-xs btn-primary" onclick="selectInquirystatus({{$inuiry_data[$i]['id']}},'{{$inuiry_data[$i]['comments']['followup_status']}}','{{$inuiry_data[$i]['comments']['comment_type']}}')">Edit</a>
+                                                                                             </td>
+                                                                                         </tr>
+                                                                                       <?php }}?>
+                                                                                       <?php if(isset($enrollmentFollowupData)){ for($i=0;$i<count($enrollmentFollowupData);$i++){?> 
+                                                                                         <tr>
+                                                                                             <td>{{$enrollmentFollowupData[$i]['student_name']}}</td>
+                                                                                             <td>{{$enrollmentFollowupData[$i]['comments']['followup_type']}}</td>
+                                                                                             <td>{{$enrollmentFollowupData[$i]['payment_date']}}</td>
+                                                                                             <td>{{$enrollmentFollowupData[$i]['comments']['comment_type']}}</td>
+                                                                                             <td>{{$enrollmentFollowupData[$i]['comments']['reminder_date']}}</td>
+                                                                                             <td>
+                                                                                                 <a href="#" class="btn btn-xs btn-warning" onclick="getEnrollmentData({{$enrollmentFollowupData[$i]['id']}})" >History</a>
+                                                                                                 <a href="#" class="btn btn-xs btn-primary" onclick="selectEnrollmetnstatus({{$enrollmentFollowupData[$i]['id']}},'{{$enrollmentFollowupData[$i]['comments']['followup_status']}}','{{$enrollmentFollowupData[$i]['comments']['comment_type']}}')">Edit</a>
+                                                                                             </td>
+                                                                                         </tr>
+                                                                                       <?php }}?>
+                                                                                       <?php if(isset($membership_followup_data)){ for($i=0;$i<count($membership_followup_data);$i++){?> 
+                                                                                         <tr>
+                                                                                             <td></td>
+                                                                                             <td>{{$membership_followup_data[$i]['followup_type']}}</td>
+                                                                                             <td>{{$membership_followup_data[$i]['membership_end_date']}}</td>
+                                                                                             <td>{{$membership_followup_data[$i]['comment_type']}}</td>
+                                                                                             <td>{{$membership_followup_data[$i]['reminder_date']}}</td>
+                                                                                             <td>
+                                                                                                 <a href="#" class="btn btn-xs btn-warning" onclick="viewhistory({{$membership_followup_data[$i]['membership_followup_id']}})" >History</a>
+                                                                                                 <a href="#" class="btn btn-xs btn-primary" onclick="selectmembershipstatus({{$membership_followup_data[$i]['membership_followup_id']}},'{{$membership_followup_data[$i]['followup_status']}}','{{$membership_followup_data[$i]['comment_type']}}')">Edit</a>
+                                                                                             </td>
+                                                                                         </tr>
+                                                                                       <?php }}?>
+                                                                                     </tbody>
+                                                                                     </table>
+                                                                                  </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                 
+                                                                <!-- SET UP INTROVISIT -->     	
+                                                                  <div class="uk-width-medium-1-3 introvisitfollowup" id="introvisitfollowup" style="display:none">
+								          	<div class="parsley-row">
+										<label for="eligibleClassesCbx">Eligible Classess<span
+											class="req">*</span></label> <select id="eligibleClassIntro"
+											name="eligibleClassesCbx" required
+											class="eligibleClassesCbx form-control input-sm md-input"
+											style="padding: 0px; font-weight: bold; color: #727272; width: 100%">
+											<option value=""></option>
+										</select>
+								        	</div>
+								        </div>
+                                                                       
+								   <div class="uk-width-medium-1-3 introvisitfollowup" id="introvisitfollowup" style="display:none">
+								            	<div class="parsley-row">
+										<label for="introbatchCbx">Batch<span class="req">*</span></label>
+										<select id="introbatchCbx" name="introbatchCbx" required
+											class='form-control input-sm md-input'
+											style="padding: 0px; font-weight: bold; color: #727272;">
+											<option value=""></option>
+										</select>
+								          	</div>
+								        </div>
+								<div class="uk-width-medium-1-3 introvisitfollowup" id="introvisitfollowup" style="display:none">
+									<div class="parsley-row" style="margin-top: -20px">
+										<label for="introVisitTxtBox">Introductory visit date<span
+											class="req">*</span></label> <br>
+										{{Form::text('introVisitTxtBox',
+										null,array('id'=>'introVisitTxtBox', 'required'=>'', 'class' =>
+										''))}}
+									</div>
+								</div>
+                                                                  <div class="uk-width-medium-1-1 introvisitfollowup" id="introvisitfollowup" style="display:none">
+                                                                      <div class="parsley-row">
+										<label for="customerCommentTxt">Comment<span class="req">*</span></label>
+										{{ Form::textarea('customerCommentTxt', null,
+										['id'=>'customerCommentTxt', 'size' => '50x2',
+										'class' => 'form-control input-sm md-input']) }}
+									</div>
+									<br>
+                                                                  </div>
+                                                                          <div class="uk-width-medium-1-3 introvisitfollowup" id="introvisitfollowup" style="display:none"></div>
+                                                                          <div class="uk-width-medium-1-3 introvisitfollowup" id="introvisitfollowup" style="display:none"></div>
+                                                                          <div class="uk-width-medium-1-3 introvisitfollowup" id="introvisitfollowup" style="display:none">
+                                                                              <button type="submit" class="btn btn-primary introvisitfollowup" style="display:none; float:right"
+										id="addIntroVisitSubmit">Add Introductory Visit</button>            
+                                                                          </div>
+                                                                          
+                                                                          
+                                                                          
+                                                                  <!-- SET UP INTROVISIT END-->
+                                                                  
+                                                                  <!-- Other Followups Starts from here-->
+                                                                  <div class="uk-width-medium-1-1 otherFollowups" id="otherFollowups" style="display:none">
+							                 <div class="parsley-row">
+								           <label for="commentsTxt">Comments<span class="req">*</span></label>
+							                	{{ Form::textarea('otherCommentTxtarea', null, ['id'=>'otherCommentTxtarea',
+								                'size' => '60x3', 'class' => 'form-control input-sm md-input'])
+							                       	}}
+							                 </div>
+					                          </div>
+                                                                  <div class="uk-width-medium-1-1 otherFollowups" id="otherFollowups" style="display:none">
+							          &nbsp;
+                                                                  </div>
+                                                                  <div class="uk-width-medium-1-1 otherFollowups" id="otherFollowups" style="display:none">
+							          &nbsp;
+                                                                  </div>
+                                                                  <div class="uk-width-medium-1-3 otherFollowups" id="reminderfollowupDate" style="display:none">
+							        	<div class="parsley-row" style="margin-top: -23px;">
+								        	<label for="remindDate">Reminder-date<span
+										class="req">*</span></label><br>
+									      {{Form::text('remindDate',
+									       null,array('id'=>'remindDate', 'required'=>'','class' =>
+									      'uk-form-width-medium'))}}
+
+								        </div>
+							
+                                                                   </div>
+                                                                   <div class="uk-width-medium-1-3 otherFollowups" id='otherFollowups' style="display:none"></div>
+                                                                 
+                                                                  <div class="uk-width-medium-1-3 otherFollowups" id='otherFollowups' style="display:none">
+                                                                  
+                                                                      <button type="submit" class="btn btn-primary otherFollowups" style="display:none; float:right"
+										id="addOtherFollowupSubmit">Add Followups</button> 
+                                                                  </div>
+                                                                  
+                                                                          
+                                                                  
+                                                                  
+                                                                  <!-- Other Followups Ends Here-->
+                                                                  
+                                                                  
+                                                                       </div> 
+								         </div>
+		                           		<br clear="all"/>
+                                           </li>
 		                      </ul>                                	
                           </li>
                                 
@@ -1499,14 +3661,14 @@ function pendingamount(pendingamountId,pendingAmount){
 				            </div>
 				            <div class="uk-width-medium-1-3">
 				                 <div class="parsley-row">
-				                 	<label for="nickname">Nickname<span class="req">*</span></label>
+				                 	<label for="nickname">Nickname</label>
 				                 	{{Form::text('nickname', null,array('id'=>'nickname',  'class' => 'form-control input-sm md-input'))}}
 				                 </div>
 				            </div>
 				            <div class="uk-width-medium-1-3">
 				                 <div class="parsley-row" style="margin-top:-30px;">
-				                 	<label for="studentDob">Date of birth<span class="req">*</span></label>
-				                 	{{Form::text('studentDob', null,array('id'=>'studentDob','required', 'class' => ''))}}
+				                 	<label for="studentDob">Date of birth</label> <br/>(MM/DD/YYYY)
+				                 	{{Form::text('studentDob', null,array('id'=>'studentDob', 'class' => '','required'))}}
 				                 </div>
 				            </div>		
 				            		            				            
@@ -1515,7 +3677,7 @@ function pendingamount(pendingamountId,pendingAmount){
 				        <div class="uk-grid" data-uk-grid-margin>
 				        	<div class="uk-width-medium-1-3">
 				                 <div class="parsley-row">
-				                 	<label for="studentGender">Gender<span class="req">*</span></label>
+				                 	<label for="studentGender">Gender</label>
 				                 	<select id="studentGender" name="studentGender" class="form-control input-sm md-input" style="padding:0px; font-weight:bold;color: #727272;">
 				                 		<option value=""></option>
 				                 		<option value="male">Male</option>
@@ -1527,13 +3689,13 @@ function pendingamount(pendingamountId,pendingAmount){
 				        	
 				        	<div class="uk-width-medium-1-3">
 				                 <div class="parsley-row">
-				                 	<label for="location">Location<span class="req">*</span></label>
+				                 	<label for="location">Location</label>
 				                 	{{Form::text('location', null,array('id'=>'location',  'class' => 'form-control input-sm md-input'))}}
 				                 </div>
 				            </div>	
 				            <div class="uk-width-medium-1-3">
 				                 <div class="parsley-row">
-				                 	<label for="school">School<span class="req">*</span></label>
+				                 	<label for="school">School</label>
 				                 	{{Form::text('school', null,array('id'=>'school',  'class' => 'form-control input-sm md-input'))}}
 				                 </div>
 				            </div>		             				            
@@ -1542,34 +3704,34 @@ function pendingamount(pendingamountId,pendingAmount){
 				        <div class="uk-grid" data-uk-grid-margin>
 				        	<div class="uk-width-medium-1-3">
 				                 <div class="parsley-row">
-				                 	<label for="hobbies">Hobbies<span class="req">*</span></label>
-				                 	{{Form::hidden('hobbies', 'Playing',array('id'=>'hobbies', 'required', 'class' => 'form-control input-sm md-input','style'=>''))}}
+				                 	<label for="hobbies">Hobbies</label>
+				                 	{{Form::hidden('hobbies', 'Playing',array('id'=>'hobbies',  'class' => 'form-control input-sm md-input','style'=>''))}}
 				                 </div>
 				            </div>				        	
 				        	<div class="uk-width-medium-1-3">
 				                 <div class="parsley-row">
-				                 	<label for="emergencyContact">Emergency contact<span class="req">*</span></label>
-				                 	{{Form::number('emergencyContact', null,array('id'=>'emergencyContact', 'required', 'class' => 'form-control input-sm md-input', 'style'=>'padding:0px'))}}
+				                 	<label for="emergencyContact">Emergency contact</label>
+				                 	{{Form::number('emergencyContact', null,array('id'=>'emergencyContact',  'class' => 'form-control input-sm md-input', 'style'=>'padding:0px'))}}
 				                 </div>
 				            </div>
 			             	<div class="uk-width-medium-1-3">
 				                 <div class="parsley-row">
-				                 	<label for="remarks">Remarks<span class="req">*</span></label>
-				                 	{{Form::text('remarks', null,array('id'=>'remarks', 'required', 'class' => 'form-control input-sm md-input'))}}
+				                 	<label for="remarks">Remarks</label>
+				                 	{{Form::text('remarks', null,array('id'=>'remarks', 'class' => 'form-control input-sm md-input'))}}
 				                 </div>
 				            </div>			            
 				        </div>
 				        <div class="uk-grid" data-uk-grid-margin>				        
 				        	<div class="uk-width-medium-1-1">
 				                 <div class="parsley-row">
-				                 	<label for="healthIssue">Health Issues<span class="req">*</span></label>
+				                 	<label for="healthIssue">Health Issues</label>
 				                 	{{ Form::textarea('healthIssue', null, ['id'=>'healthIssue', 'size' => '10x3', 'class' => 'form-control input-sm md-input']) }}
 				                 </div>
 				            </div>
 				        </div>
 				        <div class="uk-grid">
                             <div class="uk-width-1-1">
-                                <button type="submit" id="saveKidsBtn" class="md-btn md-btn-primary">Submit</button>
+                                <button type="submit" id="saveKidsBtn" class="md-btn md-btn-primary">Add Student</button>
                             </div>
                         </div>
 				    </form>    
@@ -1619,20 +3781,29 @@ function pendingamount(pendingamountId,pendingAmount){
 			      		
 			      		{{Form::open(array("id"=>"editCustomerForm", 'files'=> true, 'url'=>'quick/editCustomer'))}} 
 			      		<br clear="all"/>
-			      	 	<div class="uk-grid" data-uk-grid-margin>
-			             	<div class="uk-width-medium-1-3">
+                                        <div class="uk-grid" data-uk-grid-margin>
+                                            <div class="uk-width-medium-1-2">
 				                 <div class="parsley-row">
-				                 	<label for="customerName">Customer name<span class="req">*</span></label>
+				                 	<label for="customerName">Customer Firstname<span class="req">*</span></label>
 				                 	{{Form::text('customerName', "$customer->customer_name",array('id'=>'customerName', 'required', 'class' => 'form-control input-sm md-input'))}}
 				                 </div>
 				            </div>
-				            <div class="uk-width-medium-1-3">
+                                            <div class="uk-width-medium-1-2">
 				                 <div class="parsley-row">
-				                 	<label for="customerEmail">Customer email<span class="req">*</span></label>
-				                 	{{Form::text('customerEmail', $customer->customer_email,array('id'=>'customerEmail', 'required', 'class' => 'form-control input-sm md-input'))}}
+				                 	<label for="customerLastName">Customer Lastname<span class="req">*</span></label>
+				                 	{{Form::text('customerLastName', "$customer->customer_lastname",array('id'=>'customerLastName', 'required', 'class' => 'form-control input-sm md-input'))}}
 				                 </div>
 				            </div>
-				            <div class="uk-width-medium-1-3">
+                                        </div>
+			      	 	<div class="uk-grid" data-uk-grid-margin>
+			             
+				            <div class="uk-width-medium-1-2">
+				                 <div class="parsley-row">
+				                 	<label for="customerEmail">Customer email<span class="req">*</span></label>
+				                 	{{Form::email('customerEmail', $customer->customer_email,array('id'=>'customerEmail', 'required', 'class' => 'form-control input-sm md-input'))}}
+				                 </div>
+				            </div>
+				            <div class="uk-width-medium-1-2">
 				                 <div class="parsley-row">
 				                 	<label for="customerMobile">Customer mobile number<span class="req">*</span></label>
 				                 	{{Form::text('customerMobile', $customer->mobile_no,array('id'=>'customerMobile','required', 'class' => 'form-control input-sm md-input'))}}
@@ -1644,20 +3815,20 @@ function pendingamount(pendingamountId,pendingAmount){
 				        <div class="uk-grid" data-uk-grid-margin>
 				        	<div class="uk-width-medium-1-3">
 				                 <div class="parsley-row">
-				                 	<label for="building">Building<span class="req">*</span></label>
-				                 	{{Form::text('building', $customer->building,array('id'=>'building', 'required', 'class' => 'form-control input-sm md-input'))}}
+				                 	<label for="building">Building</label>
+				                 	{{Form::text('building', $customer->building,array('id'=>'building',  'class' => 'form-control input-sm md-input'))}}
 				                 </div>
 				            </div>
 				        	<div class="uk-width-medium-1-3">
 				                 <div class="parsley-row">
-				                 	<label for="apartment">Apartment<span class="req">*</span></label>
-				                 	{{Form::text('apartment', $customer->apartment_name,array('id'=>'apartment', 'required', 'class' => 'form-control input-sm md-input'))}}
+				                 	<label for="apartment">Apartment</label>
+				                 	{{Form::text('apartment', $customer->apartment_name,array('id'=>'apartment',  'class' => 'form-control input-sm md-input'))}}
 				                 </div>
 				            </div>	
 				            <div class="uk-width-medium-1-3">
 				                 <div class="parsley-row">
-				                 	<label for="lane">Lane<span class="req">*</span></label>
-				                 	{{Form::text('lane', $customer->lane,array('id'=>'lane', 'required', 'class' => 'form-control input-sm md-input'))}}
+				                 	<label for="lane">Lane</label>
+				                 	{{Form::text('lane', $customer->lane,array('id'=>'lane',  'class' => 'form-control input-sm md-input'))}}
 				                 </div>
 				            </div>			             				            
 				        </div>
@@ -1665,40 +3836,40 @@ function pendingamount(pendingamountId,pendingAmount){
 				        <div class="uk-grid" data-uk-grid-margin>
 				        	<div class="uk-width-medium-1-3">
 				                 <div class="parsley-row">
-				                 	<label for="locality">Locality<span class="req">*</span></label>
-				                 	{{Form::text('locality', $customer->locality,array('id'=>'locality', 'required', 'class' => 'form-control input-sm md-input'))}}
+				                 	<label for="locality">Locality</label>
+				                 	{{Form::text('locality', $customer->locality,array('id'=>'locality', 'class' => 'form-control input-sm md-input'))}}
 				                 </div>
 				            </div>				        	
 				        	 <div class="uk-width-medium-1-3">
 				                 <div class="parsley-row">
-				                 	<label for="state">State<span class="req">*</span></label>
-				                 	{{ Form::select('state', array('' => '') + $provinces, $customer->state ,array('id'=>'state', 'class' => 'input-sm md-input', "required", "placeholder"=>"Institution type", "style"=>'padding:0px; font-weight:bold;color: #727272;')) }}
+				                 	<label for="state">State</label>
+				                 	{{ Form::select('state', array('' => '') + $provinces, $customer->state ,array('id'=>'state', 'class' => 'input-sm md-input', "placeholder"=>"Institution type", "style"=>'padding:0px; font-weight:bold;color: #727272;')) }}
 				                 </div>
 				            </div>
 				            <div class="uk-width-medium-1-3">
 				                 <div class="parsley-row">
-				                 	<label for="state">City<span class="req">*</span></label>
-				                 	{{ Form::select('city', array('' => ''), $customer->city ,array('id'=>'city', 'class' => 'input-sm md-input',  "required", "placeholder"=>"Institution type", "style"=>'padding:0px; font-weight:bold;color: #727272;')) }}
+				                 	<label for="state">City</label>
+				                 	{{ Form::select('city', array('' => ''), $customer->city ,array('id'=>'city', 'class' => 'input-sm md-input',   "placeholder"=>"Institution type", "style"=>'padding:0px; font-weight:bold;color: #727272;')) }}
 				                 </div>
 				            </div>		            
 				        </div>
 				        <div class="uk-grid" data-uk-grid-margin>				        
 				        	<div class="uk-width-medium-1-3"> 
 				                  <div class="parsley-row">
-				                 	<label for="zipcode">Zipcode<span class="req">*</span></label>
-				                 	{{Form::text('zipcode', $customer->zipcode,array('id'=>'zipcode', 'required', 'class' => 'form-control input-sm md-input'))}}
+				                 	<label for="zipcode">Zipcode</label>
+				                 	{{Form::text('zipcode', $customer->zipcode,array('id'=>'zipcode', 'class' => 'form-control input-sm md-input'))}}
 				                 </div>
 				            </div>    
 				            <div class="uk-width-medium-1-3">    
 				                  <div class="parsley-row">
-				                 	<label for="source">Source<span class="req">*</span></label>
+				                 	<label for="source">Source</label>
 				                 	
-				                 	{{ Form::select('source', array('' => '', 'word of moutn' => 'Word of Mouth', 'grass roots' => 'Grassroots', 'walkin' => 'Walkin', 'events' => 'Events'), $customer->source ,array('id'=>'source', 'class' => 'input-sm md-input',  "required", "placeholder"=>"Institution type", "style"=>'padding:0px; font-weight:bold;color: #727272;')) }}
+				                 	{{ Form::select('source', array('' => '', 'word of moutn' => 'Word of Mouth', 'grass roots' => 'Grassroots', 'walkin' => 'Walkin', 'events' => 'Events'), $customer->source ,array('id'=>'source', 'class' => 'input-sm md-input',"placeholder"=>"Institution type", "style"=>'padding:0px; font-weight:bold;color: #727272;')) }}
 				                 </div>
 				            </div>  
 				            <div class="uk-width-medium-1-3">    
 				                  <div class="parsley-row">
-				                 	<label for="referredBy">Referred by<span class="req">*</span></label>
+				                 	<label for="referredBy">Referred by</label>
 				                 	{{Form::text('referredBy', $customer->referred_by,array('id'=>'referredBy',  'class' => 'form-control input-sm md-input'))}}				                 	
 				                 </div>
 			                </div>
@@ -1763,5 +3934,1122 @@ function pendingamount(pendingamountId,pendingAmount){
       
     </div>
   </div>
+
+
+
+<!-- for pending birthday modal -->
+<div id="pendingamountpay" class="modal fade" role="dialog" style="margin-top: 50px; z-index: 99999;">
+    <div class="modal-dialog modal-lg">
+    
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header" id="pendingamountpayheader">
+          
+            <h4 class="modal-title">PendingAmountPay</h4>
+        </div>
+        <div class="modal-body" id="pendingamountpaybody">
+            <div class="msg" id="msg"></div>
+            <h4>Existing Order</h4>
+            <table  id="pendingamounttable" class="uk-table table-striped table-condensed"> 
+                <thead> 
+                    <tr>
+                        <th>Particulars</th>
+                        <th>Qty</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tr>    
+                    <td>
+                        Additional No of guests
+                    </td>    
+                    <td>
+                        
+                        <input type="number" id="additionalguestNo" class="additionalguestNo form-control input-sm " name="additionalguestNo" readonly value="0"/>
+                    </td>
+                    <td>
+                        <input type="number" id="additionalguestcost" class="additionalguestcost form-control input-sm " name="additionalguestcost" readonly value="0"/>
+                    </td>
+                </tr>
+                <tr>    
+                    <td>
+                        Additional Half Hours
+                    </td>    
+                    <td>
+                        <input type="number" id="additionalhalfhours" class="additionalhalfhours form-control input-sm " name="additionalhalfhours" readonly value="0" />
+                    </td>
+                    <td>
+                        <input type="number" id="additionalhalfhourscost" class="additionalhalfhourscost form-control input-sm " name="additionalhalfhourscost" readonly value="0">
+                    </td>
+                </tr>
+                <tr>
+                    <td>Advance paid</td>
+                    <td></td>
+                    <td><input type="number" id="advancepaid" class="advancepaid form-control input-sm " name="advancepaid" readonly value="0"></td>
+                </tr>
+                <tr>
+                    <td>Amount Pending</td>
+                    <td></td>
+                    <td><input type="number" id="amountpending" class="advancepaid form-control input-sm " name="advancepaid" readonly value="0"></td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td>Tax Amount</td>
+                    <td><input type="number" id="taxamount" class="taxamount form-control input-sm " name="taxamount" readonly value="0"></td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td>TotalAmount Pending</td>
+                    <td><input type="number" id="amountPendingAfterTax" class="amountPendingAfterTax form-control input-sm " name="amountPendingAfterTax" readonly value="0"></td>
+                </tr>
+                <tr>
+                    <td> 
+                        <div class="parsley-row"> 
+                        <input type="checkbox" class="" id="changeorder" name="changeorder"/>
+                        <label class="">change order</label> 
+                         </div>
+                    </td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            </table>
+        <div  class="uk-grid" data-uk-grid-margin>
+              <div class="uk-width-medium-1-1" >
+               <h4>Select Payment Type</h4>
+              </div>
+            </div>
+         <div id="receiveBirthdayPaymentType" class="uk-grid" data-uk-grid-margin>     
+            <div class="uk-width-medium-1-3">
+                <div class="parsley-row">
+                    <input type="radio" name="birthdayPaymentReceiveTypeRadio" required
+                        id="birthdayPaymentOptionsReceive_1" value="card" /> 
+                    <label for="birthdayPaymentOptionsReceive_1" class="inline-label">Card</label> 
+                   <input type="radio" name="birthdayPaymentReceiveTypeRadio" id="birthdayPaymentOptionsReceive_2"
+                        value="cash" /> 
+                    <label for="birthdayPaymentOptionsReceive_2" class="inline-label">Cash</label>
+                    <input type="radio" name="birthdayPaymentReceiveTypeRadio" id="birthdayPaymentOptionsReceive_3" value="cheque" />
+                    <label for="birthdayPaymentOptionsReceive_3" class="inline-label">Cheque</label>
+                </div>
+            </div>
+            <div class="uk-width-medium-1-3">
+                <input type="hidden" id="birthdayPending_id" value=""/>
+                <input type="hidden" id="birthdaypending_amt" value=""/>
+            </div>
+         </div>
+          
+           <div id="birthdayPaymentReceiveType" style="width: 100%">
+		<div id="receiveBirthdayCardDetailsDiv" class="uk-grid" data-uk-grid-margin>
+		    <div class="uk-width-medium-1-1">
+                        <h4>Card details</h4>
+                    </div>
+                    <div class="uk-width-medium-1-2">
+			<div class="parsley-row">
+                            <select name="birthdayReceivecardType" id="birthdayReceivecardType"
+				class="input-sm md-input"
+				class="form-control input-sm md-input"
+			        style='padding: 0px; font-weight: bold; color: #727272;'>
+                                <option value="master">Master card</option>
+				<option value="maestro">Maestro</option>
+				<option value="visa">Visa</option>
+                                <option value="rupay">Rupay</option>
+                            </select>
+			</div>
+                    </div>
+                    <div class="uk-width-medium-1-2">
+			<div class="parsley-row">
+                            <label for="birthdayCard4digits" class="inline-label">Last 4 digits
+                               of your card<span class="req">*</span>
+			    </label> 
+                            <input id="birthdayReceivecard4digits" number name="birthdayReceivecard4digits"
+			    maxlength="4" type="text" class="form-control input-sm md-input" />
+			</div>
+		    </div>
+	            <br clear="all"/><br clear="all"/>						
+                    <div class="uk-width-medium-1-2">
+			<div class="parsley-row">
+                            <label for="birthdayReceivecardBankName" class="inline-label">Bank Name of your card<span class="req">*</span>
+			    </label> 
+                            <input id="birthdayReceivecardBankName" number name="birthdayReceivecardBankName"	 type="text"
+			     class="form-control input-sm md-input" />
+			</div>
+		    </div>
+									
+		    <div class="uk-width-medium-1-2">
+			<div class="parsley-row">
+			    <label for="birthdayReceivecardRecieptNumber" class="inline-label">Reciept number<span class="req">*</span>
+			    </label> 
+                            <input id="birthdayReceivecardRecieptNumber" number name="birthdayReceivecardRecieptNumber"
+				 type="text" class="form-control input-sm md-input" />
+                        </div>
+                    </div>
+
+		</div>
+                <div id="birthdayReceiveChequeDetailsDiv" class="uk-grid" data-uk-grid-margin>
+
+                    <div class="uk-width-medium-1-1">
+			<h4>Cheque details</h4>
+                            <br clear="all"/>
+                    </div>
+                    <div class="uk-width-medium-1-2">
+			<div class="parsley-row">
+                            <label for="birthdayReceivechequeBankName" class="inline-label">Bank name<span
+				class="req">*</span></label> <input id="birthdayReceivechequeBankName"
+				name="birthdayReceivebankName" type="text"
+                                accept=""class="form-control input-sm md-input" />
+			</div>
+                    </div>
+		    <div class="uk-width-medium-1-2">
+                        <div class="parsley-row">
+                            <label for="birthdayReceivechequeNumber" class="inline-label">Cheque number<span
+				class="req">*</span></label> <input id="birthdayReceivechequeNumber"
+				name="birthdayReceivechequeNumber" type="text"
+				class="form-control input-sm md-input" />
+                        </div>
+		    </div>
+		</div>
+								
+								
+                <div id="birthdayReceiveemailEnrollPrintDiv" class="uk-grid" data-uk-grid-margin>
+                    <div class="uk-width-medium-1-1">
+			<h4>Invoice option</h4>
+		    </div>
+		    <div class="uk-width-medium-1-2">
+			<div class="parsley-row">
+                            <input id="birthdayReceiveinvoicePrintOption" name="birthdayReceiveinvoicePrintOption"  value="yes"  type="checkbox"  class="checkbox-custom" />
+                                <label for="birthdayReceiveinvoicePrintOption"  class="checkbox-custom-label">Print Invoice<span
+                                    class="req">*</span></label> 
+			</div>
+                    </div>
+                    <div class="uk-width-medium-1-2" id='birthdayReceiveemail' style="display:none">
+			<div class="parsley-row">
+                            <input id="birthdayReceiveemailOption" name="birthdayReceiveemailOption" type="checkbox"  value="yes" class="checkbox-custom"  />
+				<label for="birthdayReceiveemailOption" class="checkbox-custom-label">Email Invoice<span
+                                    class="req">*</span></label> 
+                        </div>
+                    </div>
+		</div>
+
+            </div>
+
+            
+            
+            
+        </div>
+          <div class="modal-footer" id="pendingamountpayfooter">
+          <button type="button" id="pendingamountpayadd" class="btn btn-primary" >Receive pending amount</button>
+          <button type="button" id="pendingclose" class="btn btn-default" >Close</button>
+          
+        </div>
+      </div>
+      
+    </div>
+  </div>
+
+
+ <!-- history iv Modal -->
+  <div id='ivhistory' class="modal fade" role="dialog" style="margin-top: 50px; z-index: 99999;"> 
+    <div class="modal-dialog modal-lg">
+    
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header" id="ivhistoryheader">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title">Introvisit History</h4>
+        </div>
+        <div class="modal-body" id="ivhistorybody">
+          <p></p>
+        </div>
+        <div class="modal-footer" id="ivhistoryfooter">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+      
+    </div>
+  </div>
  
+ 
+ 
+ 
+ 
+<!-- Edit Introvisit Modal Div  -->
+<div id="editIntrovisitModal" class="modal fade" role="dialog"
+	style="margin-top: 50px; z-index: 99999;">
+	<div class="modal-dialog modal-lg">
+		<!-- Modal content-->
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+				<h4 id="editIntrovisitModalTitle" class="modal-title">
+					Edit Introvisit
+				</h4>
+			</div>
+			<div class="modal-body">
+				
+				<div id="introVisitEditMessage"></div> <br clear="all" /> <br
+						clear="all" />
+				
+				 <div id="ivEditForm">
+                                         <div class="uk-width-small-1-1">
+                                             <div class="parsley-row">
+                                                 <input type="hidden" id="iv_id" value=""/>
+                                             </div>
+                                         </div>
+                                     <div class="uk-grid" data-uk-grid-margin>
+                                         
+                                        <div class="uk-width-medium-1-3" id="introvisitEditDiv">
+						<div class="parsley-row">
+							<label for="iveditstatusSelect" class="inline-label">FollowupType<span
+												class="req">*</span></label>
+							<select name="iveditstatusSelect" id="iveditstatusSelect" class="input-sm md-input" data-iveditid=""  class="form-control input-sm md-input" style='padding: 0px; font-weight: bold; color: #727272;'>
+								<option value="ACTIVE/SCHEDULED">Active/Scheduled</option>
+								<option value="ATTENDED/CELEBRATED">Attended</option>
+								<option value="REMINDER_CALL">Reminder Call</option>
+                                                                <option value="FOLLOW_CALL">Follow Call</option>
+                                                                <option value="CALL_SPOUSE">Call Spouse</option>
+                                                                <option value="NOT_AVAILABLE">Not Available</option>
+                                                                <option value="NOT_INTERESTED">Not Interested</option>
+                                                                <option value="ENROLLED">Enrolled</option>
+                                                                
+							</select>
+						</div>
+					</div> 
+                                        <div class="uk-width-medium-1-3" id="introvisitEditDiv">
+						<div class="parsley-row">
+							<label for="iveditActionSelect" class="inline-label">Quality<span
+												class="req">*</span></label>
+							<select name="iveditActionSelect" id="iveditActionSelect" class="input-sm md-input" data-iveditid=""  class="form-control input-sm md-input" style='padding: 0px; font-weight: bold; color: #727272;'>
+								<option value=" "></option>
+                                                                <option value="VERYINTERESTED">Very Interested</option>
+								<option value="INTERESTED">Interested</option>
+								<option value="NOTSURE">Not Sure</option>
+                                                                <option value="NEEDTOCHECK">Need To Check</option>
+								<option value="NOTINTERESTED">Not Interested</option>
+                                                        </select>
+						</div>
+					</div>
+                                         
+                                         <div class="uk-width-medium-1-3" id="reminderDate">
+								<div class="parsley-row" style="margin-top: -23px;">
+									<label for="Reminder-date">Reminder-date<span
+										class="req">*</span></label><br>
+									{{Form::text('Reminder-date',
+									null,array('id'=>'Reminder-date', 'required'=>'','class' =>
+									'uk-form-width-medium'))}}
+
+								</div>
+							
+                                         </div>
+                                         
+                                  </div>
+                                     <!--
+                                     <div class="uk-grid" data-uk-grid-margin id="">
+                                         <div class="uk-width-medium-1-3" id="reschedule" style="display:none">
+								<div class="parsley-row" style="margin-top: -23px;">
+									<label for="Reschedule-date">Reschedule-date<span
+										class="req">*</span></label><br>
+									{{Form::text('Reschedule-date',
+									null,array('id'=>'Reschedule-date', 'required'=>'','class' =>
+									'uk-form-width-medium'))}}
+
+								</div>
+							
+                                         </div>
+                                     </div>
+                                     -->
+                                     
+                            </div>
+                            <br>
+					<div class="uk-grid" data-uk-grid-margin>
+						<div class="uk-width-medium-1-1" id="comment_hide">
+							<div class="parsley-row">
+								<label for="healthIssue">Comments<span class="req">*</span></label>
+								{{ Form::textarea('ivcustomerCommentTxtarea', null, ['id'=>'ivcustomerCommentTxtarea',
+								'size' => '60x3', 'class' => 'form-control input-sm md-input'])
+								}}
+							</div>
+						</div>
+					</div>
+				</div>	
+				
+			
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" id="saveIntroVisitBtn">Save</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+			</div>
+			
+		</div>
+
+	</div>
+</div>
+<!-- Edit Introvisit Modal Div -->
+
+
+
+<!-- Edit Birthday Modal Div  -->
+<div id="editBirthdayModal" class="modal fade" role="dialog"
+	style="margin-top: 50px; z-index: 99999;">
+	<div class="modal-dialog modal-lg">
+		<!-- Modal content-->
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+				<h4 id="editBirthdayModalTitle" class="modal-title">
+					Edit Birthday Followup
+				</h4>
+			</div>
+			<div class="modal-body">
+				
+				<div id="birthdayEditMessage"></div> <br clear="all" /> <br
+						clear="all" />
+				
+				 <div id="birthdayEditForm">
+                                         <div class="uk-width-small-1-1">
+                                             <div class="parsley-row">
+                                                 <input type="hidden" id="birthday_id" value=""/>
+                                             </div>
+                                         </div>
+                                     <div class="uk-grid" data-uk-grid-margin>
+                                         
+                                        <div class="uk-width-medium-1-3" id="birthdayEditDiv">
+						<div class="parsley-row">
+							<label for="biryhdayeditstatusSelect" class="inline-label">FollowupType<span
+												class="req">*</span></label>
+							<select name="birthdayeditstatusSelect" id="birthdayeditstatusSelect" class="input-sm md-input"  class="form-control input-sm md-input" style='padding: 0px; font-weight: bold; color: #727272;'>
+								<option value="ACTIVE/SCHEDULED">Active/Scheduled</option>
+								<option value="REMINDER_CALL">Reminder Call</option>
+                                                                <option value="FOLLOW_CALL">Follow Call</option>
+                                                                <option value="CALL_SPOUSE">Call Spouse</option>
+                                                                <option value="NOT_AVAILABLE">Not Available</option>
+                                                                <option value="NOT_INTERESTED">Not Interested</option>
+                                                                <option value="ATTENDED/CELEBRATED">Celebrated</option>
+							</select>
+						</div>
+					</div> 
+                                        <div class="uk-width-medium-1-3" id="birthdayEditDiv">
+						<div class="parsley-row">
+							<label for="birthdayActionSelect" class="inline-label">Quality<span
+												class="req">*</span></label>
+							<select name="birthdayActionSelect" id="birthdayActionSelect" class="input-sm md-input" data-iveditid=""  class="form-control input-sm md-input" style='padding: 0px; font-weight: bold; color: #727272;'>
+								<option value=" "></option>
+                                                                <option value="VERYINTERESTED">Very Interested</option>
+								<option value="INTERESTED">Interested</option>
+								<option value="NOTSURE">Not Sure</option>
+                                                                <option value="NEEDTOCHECK">Need To Check</option>
+								<option value="NOTINTERESTED">Not Interested</option>
+                                                        </select>
+						</div>
+					</div>
+                                         
+                                         <div class="uk-width-medium-1-3" id="birthdayreminder">
+								<div class="parsley-row" id="birthdayreminder" style="margin-top: -23px;">
+									<label for="birthdayReminderDate">Reminder-date<span
+										class="req">*</span></label><br>
+									{{Form::text('birthdayReminderDate',
+									null,array('id'=>'birthdayReminderDate', 'required'=>'','class' =>
+									'uk-form-width-medium'))}}
+
+								</div>
+							
+                                         </div>
+                                         
+                                  </div>
+                                     <!--
+                                     <div class="uk-grid" data-uk-grid-margin id="">
+                                         <div class="uk-width-medium-1-3" id="reschedule" style="display:none">
+								<div class="parsley-row" style="margin-top: -23px;">
+									<label for="Reschedule-date">Reschedule-date<span
+										class="req">*</span></label><br>
+									{{Form::text('Reschedule-date',
+									null,array('id'=>'Reschedule-date', 'required'=>'','class' =>
+									'uk-form-width-medium'))}}
+
+								</div>
+							
+                                         </div>
+                                     </div>
+                                     -->
+                                     
+                            </div>
+                            <br>
+					<div class="uk-grid" data-uk-grid-margin>
+						<div class="uk-width-medium-1-1" id="comment_hide">
+							<div class="parsley-row">
+								<label for="birthdaycomment">Comments<span class="req">*</span></label>
+								{{ Form::textarea('birthdayCommentArea', null, ['id'=>'birthdayCommentArea',
+								'size' => '60x3', 'class' => 'form-control input-sm md-input'])
+								}}
+							</div>
+						</div>
+					</div>
+				</div>	
+				
+			
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" id="saveBirthdayBtn">Save</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+			</div>
+			
+		</div>
+
+	</div>
+</div>
+<!-- Edit Birthday Modal Div -->
+
+
+
+<!-- Edit Complaint Modal Div  -->
+<div id="editComplaintModal" class="modal fade" role="dialog"
+	style="margin-top: 50px; z-index: 99999;">
+	<div class="modal-dialog modal-lg">
+		<!-- Modal content-->
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+				<h4 id="editComplaintModalTitle" class="modal-title">
+					Edit Complaint
+				</h4>
+			</div>
+			<div class="modal-body">
+				
+				<div id="complaintEditMessage"></div> <br clear="all" /> <br
+						clear="all" />
+				
+				 <div id="complaintEditForm">
+                                         <div class="uk-width-small-1-1">
+                                             <div class="parsley-row">
+                                                 <input type="hidden" id="complaint_id" value=""/>
+                                             </div>
+                                         </div>
+                                     <div class="uk-grid" data-uk-grid-margin>
+                                         
+                                        <div class="uk-width-medium-1-3" id="complaintEditDiv">
+						<div class="parsley-row">
+							<label for="complaintstatusSelect" class="inline-label">FollowupType<span
+												class="req">*</span></label>
+							<select name="complaintstatusSelect" id="complainteditstatusSelect" class="input-sm md-input" data-iveditid=""  class="form-control input-sm md-input" style='padding: 0px; font-weight: bold; color: #727272;'>
+								<option value="ACTIVE/SCHEDULED">Active/Scheduled</option>
+						<!--		<option value="ATTENDED/CELEBRATED">Attended</option> -->
+								<option value="REMINDER_CALL">Reminder Call</option>
+                                                                <option value="FOLLOW_CALL">Follow Call</option>
+                                                                <option value="CALL_SPOUSE">Call Spouse</option>
+                                                                <option value="NOT_AVAILABLE">Not Available</option>
+                                                <!--            <option value="NOT_INTERESTED">Not Interested</option> -->
+                                                                <option value="CLOSE_CALL">Close Call</option>
+                                                                
+							</select>
+						</div>
+					</div> 
+                                        <div class="uk-width-medium-1-3" id="complaintEditDiv">
+						<div class="parsley-row">
+							<label for="complainteditActionSelect" class="inline-label">Quality<span
+												class="req">*</span></label>
+							<select name="complainteditActionSelect" id="complainteditActionSelect" class="input-sm md-input"  class="form-control input-sm md-input" style='padding: 0px; font-weight: bold; color: #727272;'>
+								<option value=" "></option>
+                                                                <option value="VERYINTERESTED">Very Interested</option>
+								<option value="INTERESTED">Interested</option>
+								<option value="NOTSURE">Not Sure</option>
+                                                                <option value="NEEDTOCHECK">Need To Check</option>
+								<option value="NOTINTERESTED">Not Interested</option>
+                                                        </select>
+						</div>
+					</div>
+                                         
+                                         <div class="uk-width-medium-1-3" id="remDate">
+								<div class="parsley-row" style="margin-top: -23px;">
+									<label for="rDate">Reminder-date<span
+										class="req">*</span></label><br>
+									{{Form::text('rDate',
+									null,array('id'=>'rDate', 'required'=>'','class' =>
+									'uk-form-width-medium'))}}
+
+								</div>
+							
+                                         </div>
+                                         
+                                  </div>
+                                     
+                            </div>
+                            <br>
+					<div class="uk-grid" data-uk-grid-margin>
+						<div class="uk-width-medium-1-1" id="comment">
+							<div class="parsley-row">
+								<label for="complaint">Comments<span class="req">*</span></label>
+								{{ Form::textarea('complaintcustomerCommentTxtarea', null, ['id'=>'complaintcustomerCommentTxtarea',
+								'size' => '60x3', 'class' => 'form-control input-sm md-input'])
+								}}
+							</div>
+						</div>
+					</div>
+				</div>	
+				
+			
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" id="saveComplaintBtn">Save</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+			</div>
+			
+		</div>
+
+	</div>
+</div>
+<!-- Edit COmplaint Modal Div -->
+
+
+
+<!-- Edit Retention  Modal Div  -->
+<div id="editRetentionModal" class="modal fade" role="dialog"
+	style="margin-top: 50px; z-index: 99999;">
+	<div class="modal-dialog modal-lg">
+		<!-- Modal content-->
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+				<h4 id="editRetentionModalTitle" class="modal-title">
+					Edit Retention
+				</h4>
+			</div>
+			<div class="modal-body">
+				
+				<div id="retentionEditMessage"></div> <br clear="all" /> <br
+						clear="all" />
+				
+				 <div id="retentionEditForm">
+                                         <div class="uk-width-small-1-1">
+                                             <div class="parsley-row">
+                                                 <input type="hidden" id="retention_id" value=""/>
+                                             </div>
+                                         </div>
+                                     <div class="uk-grid" data-uk-grid-margin>
+                                         
+                                        <div class="uk-width-medium-1-3" id="retentionEditDiv">
+						<div class="parsley-row">
+							<label for="retentionstatusSelect" class="inline-label">FollowupType<span
+												class="req">*</span></label>
+							<select name="retentionstatusSelect" id="retentioneditstatusSelect" class="input-sm md-input"   class="form-control input-sm md-input" style='padding: 0px; font-weight: bold; color: #727272;'>
+								<option value="ACTIVE/SCHEDULED">Active/Scheduled</option>
+						<!--		<option value="ATTENDED/CELEBRATED">Attended</option> -->
+								<option value="REMINDER_CALL">Reminder Call</option>
+                                                                <option value="FOLLOW_CALL">Follow Call</option>
+                                                                <option value="CALL_SPOUSE">Call Spouse</option>
+                                                                <option value="NOT_AVAILABLE">Not Available</option>
+                                                <!--            <option value="NOT_INTERESTED">Not Interested</option> -->
+                                                                <option value="CLOSE_CALL">Close Call</option>
+                                                                
+							</select>
+						</div>
+					</div> 
+                                        <div class="uk-width-medium-1-3" id="retentionEditDiv">
+						<div class="parsley-row">
+							<label for="retentioneditActionSelect" class="inline-label">Quality<span
+												class="req">*</span></label>
+							<select name="retentioneditActionSelect" id="retentioneditActionSelect" class="input-sm md-input"  class="form-control input-sm md-input" style='padding: 0px; font-weight: bold; color: #727272;'>
+								<option value=" "></option>
+                                                                <option value="VERYINTERESTED">Very Interested</option>
+								<option value="INTERESTED">Interested</option>
+								<option value="NOTSURE">Not Sure</option>
+                                                                <option value="NEEDTOCHECK">Need To Check</option>
+								<option value="NOTINTERESTED">Not Interested</option>
+                                                        </select>
+						</div>
+					</div>
+                                         
+                                         <div class="uk-width-medium-1-3" id="renDate">
+								<div class="parsley-row" style="margin-top: -23px;">
+									<label for="rmDate">Reminder-date<span
+										class="req">*</span></label><br>
+									{{Form::text('rmDate',
+									null,array('id'=>'rmDate', 'required'=>'','class' =>
+									'uk-form-width-medium'))}}
+
+								</div>
+							
+                                         </div>
+                                         
+                                  </div>
+                                     
+                            </div>
+                            <br>
+					<div class="uk-grid" data-uk-grid-margin>
+						<div class="uk-width-medium-1-1" id="comment">
+							<div class="parsley-row">
+								<label for="retention">Comments<span class="req">*</span></label>
+								{{ Form::textarea('retentioncustomerCommentTxtarea', null, ['id'=>'retentioncustomerCommentTxtarea',
+								'size' => '60x3', 'class' => 'form-control input-sm md-input'])
+								}}
+							</div>
+						</div>
+					</div>
+				</div>	
+				
+			
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" id="saveRetentionBtn">Save</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+			</div>
+			
+		</div>
+
+	</div>
+</div>
+<!-- Edit Retention Modal Div -->
+
+
+
+<!-- Edit Inquiry  Modal Div  -->
+<div id="editInquiryModal" class="modal fade" role="dialog"
+	style="margin-top: 50px; z-index: 99999;">
+	<div class="modal-dialog modal-lg">
+		<!-- Modal content-->
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+				<h4 id="editInquiryModalTitle" class="modal-title">
+					Edit Inquiry
+				</h4>
+			</div>
+			<div class="modal-body">
+				
+				<div id="InquiryEditMessage"></div> <br clear="all" /> <br
+						clear="all" />
+				
+				 <div id="InquiryEditForm">
+                                         <div class="uk-width-small-1-1">
+                                             <div class="parsley-row">
+                                                 <input type="hidden" id="inquiry_id" value=""/>
+                                             </div>
+                                         </div>
+                                     <div class="uk-grid" data-uk-grid-margin>
+                                         
+                                        <div class="uk-width-medium-1-3" id="inquiryEditDiv">
+						<div class="parsley-row">
+							<label for="inquirystatusSelect" class="inline-label">FollowupType<span
+												class="req">*</span></label>
+							<select name="inquirystatusSelect" id="inquiryeditstatusSelect" class="input-sm md-input"   class="form-control input-sm md-input" style='padding: 0px; font-weight: bold; color: #727272;'>
+								<option value="ACTIVE/SCHEDULED">Active/Scheduled</option>
+						<!--		<option value="ATTENDED/CELEBRATED">Attended</option> -->
+								<option value="REMINDER_CALL">Reminder Call</option>
+                                                                <option value="FOLLOW_CALL">Follow Call</option>
+                                                                <option value="CALL_SPOUSE">Call Spouse</option>
+                                                                <option value="NOT_AVAILABLE">Not Available</option>
+                                                <!--            <option value="NOT_INTERESTED">Not Interested</option> -->
+                                                                <option value="CLOSE_CALL">Close Call</option>
+                                                                
+							</select>
+						</div>
+					</div> 
+                                        <div class="uk-width-medium-1-3" id="retentionEditDiv">
+						<div class="parsley-row">
+							<label for="inquiryeditActionSelect" class="inline-label">Quality<span
+												class="req">*</span></label>
+							<select name="inquiryeditActionSelect" id="inquiryeditActionSelect" class="input-sm md-input"  class="form-control input-sm md-input" style='padding: 0px; font-weight: bold; color: #727272;'>
+								<option value=" "></option>
+                                                                <option value="VERYINTERESTED">Very Interested</option>
+								<option value="INTERESTED">Interested</option>
+								<option value="NOTSURE">Not Sure</option>
+                                                                <option value="NEEDTOCHECK">Need To Check</option>
+								<option value="NOTINTERESTED">Not Interested</option>
+                                                        </select>
+						</div>
+					</div>
+                                         
+                                         <div class="uk-width-medium-1-3" id="remdDate">
+								<div class="parsley-row" style="margin-top: -23px;">
+									<label for="rmdDate">Reminder-date<span
+										class="req">*</span></label><br>
+									{{Form::text('rmdDate',
+									null,array('id'=>'rmdDate', 'required'=>'','class' =>
+									'uk-form-width-medium'))}}
+
+								</div>
+							
+                                         </div>
+                                         
+                                  </div>
+                                     
+                            </div>
+                            <br>
+					<div class="uk-grid" data-uk-grid-margin>
+						<div class="uk-width-medium-1-1" id="comments">
+							<div class="parsley-row">
+								<label for="inquiry">Comments<span class="req">*</span></label>
+								{{ Form::textarea('inquirycustomerCommentTxtarea', null, ['id'=>'inquirycustomerCommentTxtarea',
+								'size' => '60x3', 'class' => 'form-control input-sm md-input'])
+								}}
+							</div>
+						</div>
+					</div>
+				</div>	
+				
+			
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" id="saveInquiryBtn">Save</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+			</div>
+			
+		</div>
+
+	</div>
+</div>
+<!-- Edit Inquiry Modal Div -->
+
+
+<!-- Edit Enrollment  Modal Div  -->
+<div id="editEnrollmentModal" class="modal fade" role="dialog"
+	style="margin-top: 50px; z-index: 99999;">
+	<div class="modal-dialog modal-lg">
+		<!-- Modal content-->
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+				<h4 id="editEnrollmentModalTitle" class="modal-title">
+					Edit Enrollment
+				</h4>
+			</div>
+			<div class="modal-body">
+				
+				<div id="enrollmentEditMessage"></div> <br clear="all" /> <br
+						clear="all" />
+				
+				 <div id="enrollmentEditForm">
+                                         <div class="uk-width-small-1-1">
+                                             <div class="parsley-row">
+                                                 <input type="hidden" id="payment_due_id" value=""/>
+                                             </div>
+                                         </div>
+                                     <div class="uk-grid" data-uk-grid-margin>
+                                         
+                                        <div class="uk-width-medium-1-3" id="enrollmentEditDiv">
+						<div class="parsley-row">
+							<label for="enrollmentstatusSelect" class="inline-label">FollowupType<span
+												class="req">*</span></label>
+							<select name="enrollmentstatusSelect" id="enrollmenteditstatusSelect" class="input-sm md-input"   class="form-control input-sm md-input" style='padding: 0px; font-weight: bold; color: #727272;'>
+						<!--		<option value="ACTIVE/SCHEDULED">Active/Scheduled</option>
+								<option value="ATTENDED/CELEBRATED">Attended</option> -->
+								<option value="REMINDER_CALL">Reminder Call</option>
+                                                                <option value="FOLLOW_CALL">Follow Call</option>
+                                                                <option value="CALL_SPOUSE">Call Spouse</option>
+                                                                <option value="NOT_AVAILABLE">Not Available</option>
+                                                                <option value="NOT_INTERESTED">Not Interested</option> 
+                                                                <option value="CLOSE_CALL">Close Call</option>
+                                                                
+							</select>
+						</div>
+					</div> 
+                                        <div class="uk-width-medium-1-3" id="enrollmentEditDiv">
+						<div class="parsley-row">
+							<label for="enrollmenteditActionSelect" class="inline-label">Quality<span
+												class="req">*</span></label>
+							<select name="enrollmenteditActionSelect" id="enrollmenteditActionSelect" class="input-sm md-input"  class="form-control input-sm md-input" style='padding: 0px; font-weight: bold; color: #727272;'>
+								<option value=" "></option>
+                                                                <option value="VERYINTERESTED">Very Interested</option>
+								<option value="INTERESTED">Interested</option>
+								<option value="NOTSURE">Not Sure</option>
+                                                                <option value="NEEDTOCHECK">Need To Check</option>
+								<option value="NOTINTERESTED">Not Interested</option>
+                                                        </select>
+						</div>
+					</div>
+                                         
+                                         <div class="uk-width-medium-1-3" id="eReminderDate">
+								<div class="parsley-row" style="margin-top: -23px;">
+									<label for="enrollmentReminderDate">Reminder-date<span
+										class="req">*</span></label><br>
+									{{Form::text('enrollmentReminderDate',
+									null,array('id'=>'enrollmentReminderDate', 'required'=>'','class' =>
+									'uk-form-width-medium'))}}
+
+								</div>
+							
+                                         </div>
+                                         
+                                  </div>
+                                     
+                            </div>
+                            <br>
+					<div class="uk-grid" data-uk-grid-margin>
+						<div class="uk-width-medium-1-1" id="enrollmentcomments">
+							<div class="parsley-row">
+								<label for="enrollment">Comments<span class="req">*</span></label>
+								{{ Form::textarea('enrollmentcustomerCommentTxtarea', null, ['id'=>'enrollmentcustomerCommentTxtarea',
+								'size' => '60x3', 'class' => 'form-control input-sm md-input'])
+								}}
+							</div>
+						</div>
+					</div>
+				</div>	
+				
+			
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" id="saveEnrollmentBtn">Save</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+			</div>
+			
+		</div>
+
+	</div>
+</div>
+<!-- Edit Inquiry Modal Div -->
+
+
+<!-- Edit Membership  Modal Div  -->
+<div id="editMembershipModal" class="modal fade" role="dialog"
+	style="margin-top: 50px; z-index: 99999;">
+	<div class="modal-dialog modal-lg">
+		<!-- Modal content-->
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+				<h4 id="editMembershipModalTitle" class="modal-title">
+					Edit Membership Followup
+				</h4>
+			</div>
+			<div class="modal-body">
+				
+				<div id="membershipEditMessage"></div> <br clear="all" /> <br
+						clear="all" />
+				
+				 <div id="membershipEditForm">
+                                         <div class="uk-width-small-1-1">
+                                             <div class="parsley-row">
+                                                 <input type="hidden" id="membership_id" value=""/>
+                                             </div>
+                                         </div>
+                                     <div class="uk-grid" data-uk-grid-margin>
+                                         
+                                        <div class="uk-width-medium-1-3" id="membershipEditDiv">
+						<div class="parsley-row">
+							<label for="membershipstatusSelect" class="inline-label">FollowupType<span
+												class="req">*</span></label>
+							<select name="membershipstatusSelect" id="membershipeditstatusSelect" class="input-sm md-input"   class="form-control input-sm md-input" style='padding: 0px; font-weight: bold; color: #727272;'>
+						<!--		<option value="ACTIVE/SCHEDULED">Active/Scheduled</option>
+								<option value="ATTENDED/CELEBRATED">Attended</option> -->
+								<option value="REMINDER_CALL">Reminder Call</option>
+                                                                <option value="FOLLOW_CALL">Follow Call</option>
+                                                                <option value="CALL_SPOUSE">Call Spouse</option>
+                                                                <option value="NOT_AVAILABLE">Not Available</option>
+                                                                <option value="NOT_INTERESTED">Not Interested</option> 
+                                                                <option value="CLOSE_CALL">Close Call</option>
+                                                                
+							</select>
+						</div>
+					</div> 
+                                        <div class="uk-width-medium-1-3" id="membershipEditDiv">
+						<div class="parsley-row">
+							<label for="membershipeditActionSelect" class="inline-label">Quality<span
+												class="req">*</span></label>
+							<select name="membershipeditActionSelect" id="membershipeditActionSelect" class="input-sm md-input"  class="form-control input-sm md-input" style='padding: 0px; font-weight: bold; color: #727272;'>
+								<option value=" "></option>
+                                                                <option value="VERYINTERESTED">Very Interested</option>
+								<option value="INTERESTED">Interested</option>
+								<option value="NOTSURE">Not Sure</option>
+                                                                <option value="NEEDTOCHECK">Need To Check</option>
+								<option value="NOTINTERESTED">Not Interested</option>
+                                                        </select>
+						</div>
+					</div>
+                                         
+                                         <div class="uk-width-medium-1-3" id="membeshipReminderDate">
+								<div class="parsley-row" style="margin-top: -23px;">
+									<label for="membershipReminderDate">Reminder-date<span
+										class="req">*</span></label><br>
+									{{Form::text('membershipReminderDate',
+									null,array('id'=>'membershipReminderDate', 'required'=>'','class' =>
+									'uk-form-width-medium'))}}
+
+								</div>
+							
+                                         </div>
+                                         
+                                  </div>
+                                     
+                            </div>
+                            <br>
+					<div class="uk-grid" data-uk-grid-margin>
+						<div class="uk-width-medium-1-1" id="membershipcomments">
+							<div class="parsley-row">
+								<label for="membershipComments">Comments<span class="req">*</span></label>
+								{{ Form::textarea('membeshipcustomerCommentTxtarea', null, ['id'=>'membershipcustomerCommentTxtarea',
+								'size' => '60x3', 'class' => 'form-control input-sm md-input'])
+								}}
+							</div>
+						</div>
+					</div>
+				</div>	
+				
+			
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" id="saveMembershipBtn">Save</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+			</div>
+			
+		</div>
+
+	</div>
+</div>
+<!-- Edit Membership Modal Div -->
+
+
+
+
+
+ <!-- history Birthday Modal -->
+  <div id='birthdayhistory' class="modal fade" role="dialog" style="margin-top: 50px; z-index: 99999;"> 
+    <div class="modal-dialog modal-lg">
+    
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header" id="birthdayhistoryheader">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title">Birthday History</h4>
+        </div>
+        <div class="modal-body" id="birthdayhistorybody">
+          <p></p>
+        </div>
+        <div class="modal-footer" id="birthdayhistoryfooter">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+ 
+  <!-- history Complaint Modal -->
+  <div id='complianthistory' class="modal fade" role="dialog" style="margin-top: 50px; z-index: 99999;"> 
+    <div class="modal-dialog modal-lg">
+    
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header" id="complainthistoryheader">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title">Complaint History</h4>
+        </div>
+        <div class="modal-body" id="Complianthistorybody">
+          <p></p>
+        </div>
+        <div class="modal-footer" id="complainthistoryfooter">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+  
+   
+  <!-- history Retention Modal -->
+  <div id='retentionhistory' class="modal fade" role="dialog" style="margin-top: 50px; z-index: 99999;"> 
+    <div class="modal-dialog modal-lg">
+    
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header" id="retentionhistoryheader">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title">Retention History</h4>
+        </div>
+        <div class="modal-body" id="Retentionhistorybody">
+          <p></p>
+        </div>
+        <div class="modal-footer" id="retentionhistoryfooter">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+  
+  
+  
+   <!-- history Inquiry Modal -->
+  <div id='inquiryhistory' class="modal fade" role="dialog" style="margin-top: 50px; z-index: 99999;"> 
+    <div class="modal-dialog modal-lg">
+    
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header" id="inquiryhistoryheader">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title">Inquiry History</h4>
+        </div>
+        <div class="modal-body" id="Inquiryhistorybody">
+          <p></p>
+        </div>
+        <div class="modal-footer" id="inquiryhistoryfooter">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+ 
+ 
+   <!-- history Membership followup Modal -->
+  <div id='membershiphistory' class="modal fade" role="dialog" style="margin-top: 50px; z-index: 99999;"> 
+    <div class="modal-dialog modal-lg">
+    
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header" id="membershiphistoryheader">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title">Membership History</h4>
+        </div>
+        <div class="modal-body" id="Membershiphistorybody">
+          <p></p>
+        </div>
+        <div class="modal-footer" id="membershiphistoryfooter">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+   
+   
+   
+   
+   <!-- history Enrollment  Modal -->
+  <div id='enrollmentyhistory' class="modal fade" role="dialog" style="margin-top: 50px; z-index: 99999;"> 
+    <div class="modal-dialog modal-lg">
+    
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header" id="enrollmenthistoryheader">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title">Enrollment History</h4>
+        </div>
+        <div class="modal-body" id="enrollmenthistorybody">
+          <p></p>
+        </div>
+        <div class="modal-footer" id="enrollmenthistoryfooter">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+    
+ <!-- Receive due for birthday Modal -->
+  <div id='receiveBirthdayDue' class="modal fade" role="dialog" style="margin-top: 50px; z-index: 99999;"> 
+    <div class="modal-dialog modal-lg">
+    
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header" id="receiveBirthdayDueheader">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title">Receive Birthday Due</h4>
+        </div>
+        <div class="modal-body" id="receiveBirthdayDuebody">
+            <div  class="uk-grid" data-uk-grid-margin>
+                      <div class="uk-width-medium-1-1" id="receiveBirthdayDueMsg"></div>
+            </div>
+         
+								
+          
+       </div>     
+          
+        <div class="modal-footer" id="birthdayReceiveduefooter">
+          <button type="submit" class="btn btn-primary" id="birthdayReceivepayment">Receive Payment</button>
+          <button type="button" class="btn btn-default" id='birthdayReceivedueclose'>Close</button>
+        </div>
+      
+      
+    </div>
+  </div>
+
 @stop

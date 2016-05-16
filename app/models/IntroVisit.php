@@ -21,7 +21,7 @@ class IntroVisit extends \Eloquent {
 		return $this->belongsTo('Batches', 'batch_id');
 	}
 	
-	
+
 	
 	
 	static function addSchedule($inputs){
@@ -33,7 +33,7 @@ class IntroVisit extends \Eloquent {
 		
 		$introVisit->class_id           = $inputs['eligibleClassesCbx'];
 		$introVisit->batch_id           = $inputs['introbatchCbx'];	
-		$introVisit->status             = 'active';
+		//$introVisit->status             = 'ACTIVE/SCHEDULED';
 		
 		$introVisit->franchisee_id      = Session::get('franchiseId');		
 		$introVisit->iv_date            = date('Y-m-d',strtotime($inputs['introVisitTxtBox']));
@@ -56,7 +56,8 @@ class IntroVisit extends \Eloquent {
 	static function getIntrovisitBytoday(){
 	
 		return IntroVisit::whereDate('iv_date', '=',  date("Y-m-d"))
-							->where('status', '=',  'ACTIVE')
+						//	->whereIn('status',array('ACTIVE/SCHEDULED','RESCHEDULED'))
+                                                       
 							->where('franchisee_id', '=',  Session::get('franchiseId'))
 							->count();
 	}
@@ -64,7 +65,7 @@ class IntroVisit extends \Eloquent {
 	static function getAllActiveIntrovisit(){
 	
 		return IntroVisit::with('Customers', 'Classes', 'Batches', 'Students')
-							->where('status', '=',  'ACTIVE')
+						//	->whereIn('status',array('ACTIVE/SCHEDULED','RESCHEDULED'))
 							->where('franchisee_id', '=',  Session::get('franchiseId'))
 							->get();
 	}

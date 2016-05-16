@@ -34,6 +34,9 @@ class User extends Eloquent implements UserInterface, RemindableInterface {
 	public function Courses(){
 		return $this->hasMany('Courses','created_by');
 	}
+        public function ClassBasePrice(){
+		return $this->hasMany('Courses','created_by');
+	}
 	
 	public function Comments(){
 		return $this->hasMany('Comments','created_by');
@@ -109,5 +112,11 @@ class User extends Eloquent implements UserInterface, RemindableInterface {
 		
 		
 	}
+        
+        static function getTeachersByFranchiseeId($franchisee_id){
+            return User::where('franchisee_id','=',$franchisee_id)
+                         ->where('user_type','=','TEACHER')
+                         ->get();
+        }
 
 }

@@ -92,28 +92,50 @@ class Classes extends \Eloquent {
                                             ->join('classes', 'classes_master.id', '=', 'classes.class_master_id')
                                             ->join('student_classes', 'student_classes.class_id', '=', 'classes.id')
                                             ->where('classes.franchisee_id', '=', Session::get('franchiseId'))
-                                             ->where('course_master_id','=','1')
-                                            
-                                             ->count();
+                                            ->where('course_master_id','=','1')
+                                            ->count();
         }
 	public static function getallPrekgKindergartenCount(){
             return DB::table('classes_master')
                                             ->join('classes', 'classes_master.id', '=', 'classes.class_master_id')
                                             ->join('student_classes', 'student_classes.class_id', '=', 'classes.id')
                                             ->where('classes.franchisee_id', '=', Session::get('franchiseId'))
-                                             ->where('course_master_id','=','2')
-                                             ->count();
+                                            ->where('course_master_id','=','2')
+                                            ->count();
         }
         public static function getallGradeschoolCount(){
             return DB::table('classes_master')
                                             ->join('classes', 'classes_master.id', '=', 'classes.class_master_id')
                                             ->join('student_classes', 'student_classes.class_id', '=', 'classes.id')
                                             ->where('classes.franchisee_id', '=', Session::get('franchiseId'))
-                                             ->where('course_master_id','=','3')
-                                             ->count();
+                                            ->where('course_master_id','=','3')
+                                            ->count();
         } 
         public static function getstudentclasses($classId){
             return Classes::where('id','=',$classId)->get();
+        }
+
+
+        static function InsertNewClassFromFranchise($data){
+        
+        	$insert = new classes();
+        	$insert->class_name = $data['className'];
+        	$getSlug = ClassesMaster::select('slug','id')->where('class_name', '=', $data['className'])->get();
+        	//return $getSlug[0]['slug'];
+        	$insert->slug = $getSlug[0]['slug'];
+        	$insert->base_price_no = $data['basePriceNo'];
+        	$insert->course_id = $data['Course_id'];
+        	$insert->franchisee_id = Session::get('franchiseId');
+        	$insert->class_master_id = $getSlug[0]['id'];
+        	$insert->created_by = Session::get('userId');
+        	$insert->updated_by = Session::get('userId');
+        	$insert->save();
+        	return $insert;
+
+        }
+
+        static function getAllClassesForFranchise(){
+        	return Classes::where('franchisee_id', '=', Session::get('franchiseId'))->get();
         }
 	
 }

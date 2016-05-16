@@ -57,75 +57,202 @@ $class  = $orderDetailsTomail['class']; */
 					<div class="row datarow">
 					  <div class="col-md-3 title"><strong>Customer Name</strong></div>
 					  <div class="col-md-4" style="float:left !important">{{$orders->Customers->customer_name}}</div>
-					</div><br clear="all"/>
-					<div class="row datarow">
-					  <div class="col-md-3 title"><strong>Kid Name</strong></div>
-					  <div class="col-md-4">{{$orders->Students->student_name}}</div>
-					</div><br clear="all"/>
-					<div class="row datarow">
-					  <div class="col-md-3 title"><strong>Enrolled Class Name</strong></div>
-					  <div class="col-md-4">{{$class->class_name}}</div>
 					</div>
-					
-					
-					
-					
-					
-					
-					
-					<br clear="all"/>
-					<br clear="all"/>
-					<h4>Payment details:</h4>
+                                    	<br clear="all"/>
+                                        <br clear="all"/>
 					<div class="row datarow">
-					  <div class="col-md-3 title"><strong>Payment date</strong></div>
+                                            <div style="width:50%; float:left">
+                                                <div class="col-md-3 title"><strong>Kid Name</strong></div>
+                                                <div class="col-md-4">{{$orders->Students->student_name}}</div>
+                                            </div>
+                                            <div style="width:50%; float:right">
+                                                <div class="col-md-3 title"><strong>Enrolled Class Name</strong></div>
+                                                <div class="col-md-4">{{$class->class_name}}</div>
+                                            </div>
+					</div>
+					<br clear="all"/>
+                                        <br clear="all"/>
+                                       <div class="col-md-7 title"> <h4>Payment details:</h4></div>
+                                        <div class="row datarow">
+					  <div class="col-md-3 title"><strong>Payment date:</strong></div>
 					  <div class="col-md-4">{{date('d M Y  H:i A',strtotime($orders->created_at))}}</div>
 					</div>
-					
-					
-					
-					
-					
-					
-					<div class="col-md-6">
-					  <div class="col-md-3 title"><strong>Enrollment Start date</strong></div>
-					  <div class="col-md-4">{{date('d M Y',strtotime($studentbatch['start_date']))}}</div>
-					</div>					
-					<div class="col-md-6">
-					  <div class="col-md-3 title"><strong>Enrollment End date</strong></div>
-					  <div class="col-md-4">{{date('d M Y',strtotime($studentbatch['end_date']))}}</div>
+					<div class="row datarow">
+					  <div class="col-md-3 title">No of sessions</div>
+					  <div class="col-md-4">{{$paymentDues[0]['selected_order_sessions']}}</div>
 					</div>
+					
+					<br clear="all"/>
 					<br clear="all"/>
 					
 					<div class="row datarow">
-					  <div class="col-md-3 title"><strong>Membership Type</strong></div>
-					  <div class="col-md-4"><?php if(isset($customers['customerMembership'])){?>{{$customers['customerMembership']->MembershipTypes->name}}<?php }?></div>
+						<div class="" style="width:50%; float:left">
+						  <div class="title">Enrollment Start date</div>
+						  <div class="col-md-4">{{date('d M Y',strtotime($paymentDues[0]['start_order_date']))}}</div>
+						</div>
+						
+						<div class="" style="width:50%; float:right">
+						  <div class="title">Enrollment End date</div>
+						  <div class="col-md-4">{{date('d M Y',strtotime($paymentDues[0]['end_order_date']))}}</div>
+						</div>
 					</div>
 					<br clear="all"/>
-					<div class="row datarow">
-					  <div class="col-md-3 title"><strong>Paid Amount</strong></div>
-					  <?php 
-					  	$percentageAmount =  ((14.5 / 100) * $orders->amount);
-					  	$total            =  ($percentageAmount+$orders->amount);
-					  
-					  ?>
-					  <div class="col-md-4">{{$total}}</div>
-					</div>
 					<br clear="all"/>
-					
-					
-				
 					<div class="row datarow">
-					  <div class="col-md-3 title"><strong>Payment Mode</strong></div>
+					  <div class="col-md-3 title">Membership Type</div>
+					  <div class="col-md-4"><?php if($customerMembership){?><?php }?></div>
+					</div>
+					
+					<br clear="all"/>
+					<br clear="all"/>
+                                        
+					<div class="row datarow">
+					  <div class="col-md-3 title">Payment amount</div>
+					  <div class="col-md-4">{{$orders->amount}}</div>
+					</div>
+					
+					<?php
+					$membershipAmount = 0;
+					 if($orders->membership_type){
+					
+						if($customerMembership->MembershipTypes->id == 1){
+							$membershipAmount = 2000;
+								
+						}else if($customerMembership->MembershipTypes->id == 2){
+						
+							$membershipAmount = 5000;
+						}
+						
+						
+					}?>
+                                       
+					<br clear="all"/>
+					<br clear="all"/>
+                                        <div class="row datarow">
+					<table class="paymentsTable">
+						<thead>
+							<tr style="font-weight:bold">
+								<td style="text-align:left; width:100%;">Particulars</td>
+								<td style="text-align:right">Amount</td>
+							</tr>
+						
+						</thead>						
+						<tr>
+							<td>Enrollment Amount</td>
+							<td style="text-align:right">
+								<?php 
+								
+								//$paymentDues['0']->discount_applied
+									$percentageAmount =  ((14.5 / 100) * $orders->amount);
+								  	$actualAmount =  ($orders->amount-$percentageAmount);
+								  	
+								  	if($orders->membership_type){
+								  		//$enrollmentAmount = ($actualAmount-$membershipAmount);
+								  	}
+								  	
+								  ?>
+								  {{$orders->amount}}
+							</td>
+						</tr>		
+						
+						<?php 
+												
+						if($orders->membership_type){?>
+						<tr>
+							<td>Membership ({{$customerMembership->MembershipTypes->name}})</td>
+							<td style="text-align:right">
+								{{number_format($membershipAmount, 2, '.', '');}}
+							</td>
+						</tr>
+						<?php }?>
+						
+										
+						<tr>
+							<td style="text-align:right"><strong>Discount amount</strong></td>
+							<td  style="text-align:right">
+								
+								<strong>{{$paymentDues['0']->discount_amount}}</strong>
+							</td>
+						</tr>
+						<tr>
+							<td style="text-align:right"><strong>Subtotal</strong></td>
+							<td  style="text-align:right">
+								<?php 
+								//$percentageAmount =  ((14.5 / 100) * $orders->amount);
+								$discountedAmount =  ((int)$orders->amount - abs($paymentDues['0']->discount_amount)); 
+								
+								if(isset($customerMembership->id)){
+									
+									$discountedAmount = ($discountedAmount+$membershipAmount);
+								}
+								
+								
+								?>
+								<strong>{{number_format($discountedAmount, 2, '.', '');}}</strong>
+							</td>
+						</tr>
+						
+						<tr>
+							<td style="text-align:right"><strong>Service Tax</strong></td>
+							<td  style="text-align:right">
+								<?php 
+								//$percentageAmount =  ((14.5 / 100) * $orders->amount);
+								$percentageAmount =  ((14.5 / 100) * $orders->amount);
+								
+								?>
+								<strong>{{number_format($percentageAmount, 2, '.', '');}}</strong>
+							</td>
+						</tr>
+						
+						<tr>
+							<td style="text-align:right"><strong>Total</strong></td>
+							<td  style="text-align:right">
+								<?php 
+								
+								$totalAmountToPay = ($discountedAmount+$percentageAmount);
+								
+								
+								
+								
+								?>
+								<strong>{{number_format($totalAmountToPay, 2, '.', '');}}</strong>
+							</td>
+						</tr>
+						<tr>
+							<td></td>
+							<td></td>
+						</tr>
+					
+					
+					</table>
+					</div>
+					
+					
+					<div class="row datarow">
+					  <div class="col-md-3 title">Payment Mode</div>
 					  <div class="col-md-4">{{$orders->payment_mode}}</div>
 					</div>
-					<br clear="all"/>
+					
 					<div class="row datarow">
-					  <div class="col-md-3 title"><strong>Payment Date</strong></div>
-					  <div class="col-md-4">{{$orders->created_at}}</div>
+					  <div class="col-md-3 title">Payment type details</div>
+					  <div class="col-md-4">
+					  <?php if($orders->payment_mode == 'card'){ ?>
+					  	Card type: {{$orders->card_type}}
+					  
+					  <?php }else if($orders->payment_mode == 'cheque'){ ?>
+					  		Cheque number: {{$orders->cheque_number}}
+					  <?php }else{?>
+					  cash payment
+					  <?php }?>
+					  
+					  
+					  </div>
 					</div>
+					
 					<br clear="all"/>
 					
-					<p>Welcome. Thanks for Joining The Little Gym.  Regards, Team TLG</p>	
+					
+					<center><p>Welcome. Thanks for Joining The Little Gym.  Regards, Team TLG</p></center>	
 				</div>
 			
 			

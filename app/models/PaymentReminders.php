@@ -16,10 +16,14 @@ class PaymentReminders extends \Eloquent {
 		
 		$PaymentReminder = new PaymentReminders();
 		
-		
+                if(isset($inputs['seasonId'])){
+                    $PaymentReminder->season_id         =$inputs['seasonId'];
+                }
                 if(isset($inputs['classId']) && isset($inputs['batchId']) && isset($inputs['reminder_date'])){
                 $PaymentReminder->customer_id       = $inputs['customerId'];
-		$PaymentReminder->student_id        = $inputs['studentId'];
+		
+                $PaymentReminder->student_id        = $inputs['studentId'];
+                $PaymentReminder->season_id        = $inputs['seasonId'];
                 $PaymentReminder->enrolled_class_id = $inputs['classId'];    
                 $PaymentReminder->enrolled_batch_id = $inputs['batchId'];
                 $PaymentReminder->reminder_date     = $inputs['reminder_date'];

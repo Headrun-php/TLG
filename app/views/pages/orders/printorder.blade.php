@@ -35,6 +35,9 @@ print_r($orders); */
 		
 		
 		}
+                @media print {
+                    #Header, #Footer { display: none !important; }
+                }
 	
 	</style>
 	<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
@@ -128,20 +131,26 @@ print_r($orders); */
 					  <div class="col-md-4">{{date('d M Y  H:i A',strtotime($orders->created_at))}}</div>
 					</div>
 					<div class="row datarow">
-					  <div class="col-md-3 title">No of sessions</div>
-					  <div class="col-md-4">{{$orders->StudentClasses->selected_sessions}}</div>
+                                            <div class="" style="width:50%; float:left">
+                                                <div class="col-md-3 title">No of sessions</div>
+                                                <div class="col-md-4">{{$paymentDues[0]['selected_order_sessions']}}</div>
+                                            </div>
+                                            <div class="" style="width:50%; float:left">
+                                                <div class="col-md-3 title">Payment Type</div>
+                                                <div class="col-md-4">{{$paymentDues[0]['payment_type']}}</div>
+                                            </div>
 					</div>
 					
 					
 					<div>
 						<div class="" style="width:50%; float:left">
 						  <div class="title">Enrollment Start date</div>
-						  <div class="col-md-4">{{date('d M Y',strtotime($orders->StudentClasses->enrollment_start_date))}}</div>
+						  <div class="col-md-4">{{date('d M Y',strtotime($paymentDues[0]['start_order_date']))}}</div>
 						</div>
 						
 						<div class="" style="width:50%; float:right">
 						  <div class="title">Enrollment End date</div>
-						  <div class="col-md-4">{{date('d M Y',strtotime($orders->StudentClasses->enrollment_end_date))}}</div>
+						  <div class="col-md-4">{{date('d M Y',strtotime($paymentDues[0]['end_order_date']))}}</div>
 						</div>
 					</div>
 					
@@ -291,7 +300,10 @@ print_r($orders); */
 					
 					<br clear="all"/>
 					
-					<p>Welcome. Thanks for Joining The Little Gym.  Regards, Team TLG</p>	
+					<p>Welcome. Thanks for Joining The Little Gym.  Regards, Team TLG</p>
+					<hr/>
+					<p>Terms & Conditions:</p>
+					<br/>					
 				</div>
 			
 			

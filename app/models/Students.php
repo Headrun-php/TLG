@@ -1,4 +1,5 @@
 <?php
+use Carbon\Carbon;
 
 class Students extends \Eloquent {
 	protected $fillable = [];
@@ -28,14 +29,20 @@ class Students extends \Eloquent {
 		return $this->hasMany('Orders','student_id');
 	}
 	
-	
-	static function getAllStudentsByFranchiseeId($franchiseeId){
-		
-		$students = Students::where('franchisee_id','=', $franchiseeId)->get();
+	/*
+	static function getAllNonEnrolledStudents($franchiseeId){
+		//$presentdate=Carbon::now();
+		//$students = Students::where('franchisee_id','=', $franchiseeId)->get();
+                $students=  Students::with('StudentClasses')
+                                      ->whereDate('enrollment_start_date','>=',date("Y-m-d"))
+                                      ->whereDate('enrollment_end_date','<=', date("Y-m-d"))
+                                      ->where('franchisee_id','=', $franchiseeId)
+                                      ->get();
+                                      
 		return $students;
 	}
 	
-	
+	*/
 	
 	
 	
@@ -103,7 +110,7 @@ class Students extends \Eloquent {
 	
 	
 	
-	static function getStudentById($id){
+	public static function getStudentById($id){
 		
 		return Students::with('Customers')->where("id","=",$id)->get();
 	}

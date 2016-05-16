@@ -18,7 +18,7 @@ class PaymentDues extends \Eloquent {
 		
 		$paymentDues = new PaymentDues();
 		$paymentDues->student_id           = $inputs['student_id'];
-		
+		$paymentDues->season_id            = $inputs['seasonId'];
 		$paymentDues->customer_id          = $inputs['customer_id'];
 		$paymentDues->batch_id             = $inputs['batch_id'];
 		$paymentDues->class_id             = $inputs['class_id'];
@@ -28,7 +28,12 @@ class PaymentDues extends \Eloquent {
                 $paymentDues->payment_due_for      = 'enrollment';
 		$paymentDues->payment_status       = $inputs['payment_status'];
 		$paymentDues->selected_sessions    = $inputs['selected_sessions'];
+                if(isset($inputs['each_class_cost'])){
+                  $paymentDues->each_class_amount=$inputs['each_class_cost'];
+                }
+                if(isset($inputs['selected_order_sessions'])){
                 $paymentDues->selected_order_sessions    = $inputs['selected_order_sessions'];
+                }
                 if(isset($inputs['start_order_date'])){
                 $paymentDues->start_order_date     =$inputs['start_order_date'];
                 }
@@ -37,12 +42,15 @@ class PaymentDues extends \Eloquent {
                 }
                 if(isset($inputs['discount_amount'])){
                 $paymentDues->discount_amount=$inputs['discount_amount'];
-                    
                 }
                 $paymentDues->discount_applied     = $inputs['discount_applied'];
 		$paymentDues->created_by              = Session::get('userId');
+                if(isset($inputs['created_at'])){
+                    $paymentDues->created_at = $inputs['created_at'];
+                }else{
 		$paymentDues->created_at              = date("Y-m-d H:i:s");
-		$paymentDues->save();
+                }
+                $paymentDues->save();
 		
 		return $paymentDues;
 		
@@ -63,11 +71,39 @@ class PaymentDues extends \Eloquent {
                                     ->Orderby('id','DESC')
                                     ->get();
         }
+        static function createBirthdaypaymentFirstdues($addBirthday){
+                $paymentDues = new PaymentDues();
+		$paymentDues->student_id           = $addBirthday['student_id'];
+                $paymentDues->birthday_id          = $addBirthday['id'];
+		$paymentDues->customer_id          = $addBirthday['customer_id'];
+		$paymentDues->payment_due_amount   = $addBirthday['advance_amount_paid'];
+                if(isset($addBirthday['membership_id'])){
+                    $paymentDues->membership_id=$addBirthday['membership_id'];
+                }
+                if(isset($addBirthday['membership_amount'])){
+                    $paymentDues->membership_amount=$addBirthday['membership_amount'];
+                }
+                
+		$paymentDues->payment_type         = 'bipay';
+                $paymentDues->payment_status       = 'paid';
+		//$paymentDues->discount_applied     = $taxAmtapplied;
+                $paymentDues->payment_due_for       ="birthday";
+		$paymentDues->created_by           = Session::get('userId');
+		$paymentDues->created_at           = date("Y-m-d H:i:s");
+		$paymentDues->save();		
+		return $paymentDues;
+        }
         static function createBirthdaypaymentdues($addBirthday){
                 $paymentDues = new PaymentDues();
 		$paymentDues->student_id           = $addBirthday['student_id'];
                 $paymentDues->birthday_id          = $addBirthday['id'];
 		$paymentDues->customer_id          = $addBirthday['customer_id'];
+                if(isset($addBirthday['membership_id'])){
+                    $paymentDues->membership_id=$addBirthday['membership_id'];
+                }
+                if(isset($addBirthday['membership_amount'])){
+                    $paymentDues->membership_amount=$addBirthday['membership_amount'];
+                }
 		$paymentDues->payment_due_amount   = $addBirthday['remaining_due_amount'];
 		$paymentDues->payment_type         = 'bipay';
                 $paymentDues->payment_status       = 'pending';

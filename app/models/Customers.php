@@ -1,4 +1,5 @@
 <?php
+use Carbon\Carbon;
 
 class Customers extends \Eloquent {
 	protected $fillable = [];
@@ -51,6 +52,7 @@ class Customers extends \Eloquent {
 		$customer = new Customers();
 		$customer->franchisee_id  = Session::get('franchiseId');
 		$customer->customer_name  = $inputs['customerName'];
+                $customer->customer_lastname=$inputs['customerLastName'];
 		$customer->customer_email = $inputs['customerEmail'];
 		$customer->mobile_no      = $inputs['customerMobile'];	
 		$customer->building       = $inputs['building'];		
@@ -85,14 +87,26 @@ class Customers extends \Eloquent {
 		$customer = Customers::find($inputs['customerId']);
 		$customer->franchisee_id  = Session::get('franchiseId');
 		$customer->customer_name  = $inputs['customerName'];
+                $customer->customer_lastname  = $inputs['customerLastName'];
 		$customer->customer_email = $inputs['customerEmail'];
 		$customer->mobile_no      = $inputs['customerMobile'];
 		$customer->building       = $inputs['building'];
 		$customer->apartment_name = $inputs['apartment'];
 		$customer->lane           = $inputs['lane'];
 		$customer->locality       = $inputs['locality'];
-		$customer->state          = $inputs['state'];
-		$customer->city           = $inputs['city'];
+                if($inputs['state']==''){
+		 $customer->state          = 0;
+                }else{
+                $customer->state          = $inputs['state'];
+                }
+                if(isset($inputs['city'])){
+                if($inputs['city']==''){
+		 $customer->city          = 0;
+                }else{
+                $customer->city          = $inputs['city'];
+                }
+                }
+                
 		$customer->zipcode        = $inputs['zipcode'];
 		$customer->source         = $inputs['source'];
 		//$customer->stage          = 'inquire';
@@ -108,12 +122,61 @@ class Customers extends \Eloquent {
 		$customer->save();
 		return $customer;
 	}
-	
-	static function getAllCustomersByFranchiseeId($franchiseeId){
-		
-		$customers = Customers::where('franchisee_id', '=', $franchiseeId)->get();
+        static function getAllCustomersByFranchiseeId($franchiseeId){
+            $customers = Customers::where('franchisee_id','=',$franchiseeId) 
+                            ->get();
+                return $customers;
+        }
+        
+	static function getAllCustomerMembersByFranchiseeId($franchiseeId){
+                $presentdate=  Carbon::now();
+		$customer_members=  CustomerMembership::where('membership_start_date','<=',$presentdate->toDateString())
+                                                        ->where('membership_end_date','>=',$presentdate->toDateString())
+                                                        ->select('customer_id')
+                                                        ->get();
+               
+                $id;
+                foreach($customer_members as $c){
+                    $id[]=$c['customer_id'];
+                }
+               
+               
+                $customers = Customers::where('franchisee_id','=',$franchiseeId)
+                            ->whereIn('id',$id)
+                            ->orderBy('id','Desc')
+                            ->get();
+                 return $customers;
+                
+                 
+                
+            
+                /*
+		$customers = Customers:: join('customer_membership','customers.id','=','customer_membership.customer_id')
+                                        ->where('status','=','active')
+                                        ->where('franchisee_id', '=', $franchiseeId)
+                                        ->get();
 		return $customers;
-		
+		*/
+	}
+        static function getAllCustomerNonMembersByFranchiseeId($franchiseeId){
+		$presentdate=  Carbon::now();
+		$customer_members=  CustomerMembership::where('membership_start_date','<=',$presentdate->toDateString())
+                                                        ->where('membership_end_date','>=',$presentdate->toDateString())
+                                                        ->select('customer_id')
+                                                        ->get();
+               
+                $id;
+                foreach($customer_members as $c){
+                    $id[]=$c['customer_id'];
+                }
+                 
+                $customers = Customers::where('franchisee_id','=',$franchiseeId)
+                            ->whereNotIn('id',$id)
+                            ->orderBy('id','Desc')
+                            ->get();
+    
+		return $customers;
+               
 	}
 	
 	static function getAllCustomersForDropdown($franchiseeId){

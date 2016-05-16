@@ -22,6 +22,7 @@ class BatchSchedule extends \Eloquent {
 		$batchSchedule = new BatchSchedule();
 		
 		$batchSchedule->batch_id        = $batchScheduleInput['batchId'];
+                $batchSchedule->season_id      = $batchScheduleInput['seasonId'];
 		$batchSchedule->franchisee_id   = Session::get('franchiseId');
 		$batchSchedule->schedule_date   = $batchScheduleInput['scheduleDate'];
 		$batchSchedule->start_time      = $batchScheduleInput['startTime'];
@@ -245,6 +246,11 @@ class BatchSchedule extends \Eloquent {
 		return $studentBatchDates;
 		
 	}
+        
+        static function deleteBatchScheduleById($batchId){
+            return BatchSchedule::where('batch_id','=',$batchId)
+                                  ->delete();
+        }
 	
 	
 }

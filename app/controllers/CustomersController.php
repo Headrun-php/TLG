@@ -3,6 +3,7 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Facades\Crypt;
+use Carbon\Carbon;
 class CustomersController extends \BaseController {
 	
 	/**
@@ -13,10 +14,11 @@ class CustomersController extends \BaseController {
 	public function index() {
 		if (Auth::check ()) {
 			
-			$currentPage = "CUSTOMERS_LIST";
+			$currentPage = "MEMBERS_LIST";
 			$mainMenu = "CUSTOMERS_MAIN";
-			
-			$customers = Customers::getAllCustomersByFranchiseeId ( Session::get ( 'franchiseId' ) );
+			if(CustomerMembership::count()){
+			$customers = Customers::getAllCustomerMembersByFranchiseeId ( Session::get ( 'franchiseId' ) );
+                        }
 			$provinces = Provinces::getProvinces ( "IN" );
 			$viewData = array (
 					'customers',
@@ -24,12 +26,36 @@ class CustomersController extends \BaseController {
 					'mainMenu',
 					'provinces' 
 			);
-			return View::make ( 'pages.customers.customerslist', compact ( $viewData ) );
+			return View::make ( 'pages.customers.memberslist', compact ( $viewData ) );
 		} else {
 			return Redirect::to ( "/" );
 		}
 	}
 	
+        public function getNonMembersList(){
+            	if (Auth::check ()) {
+			
+			$currentPage = "PROSPECTUS_LIST";
+			$mainMenu = "CUSTOMERS_MAIN";
+			//$customer_members=  CustomerMembership::count();
+                        if(CustomerMembership::count()){
+			$customers = Customers::getAllCustomerNonMembersByFranchiseeId ( Session::get ( 'franchiseId' ) );
+                        }else{
+                        $customers=Customers::where('franchisee_id','=',Session::get ( 'franchiseId' ))->get();    
+                        }
+                        
+                        $provinces = Provinces::getProvinces ( "IN" );
+			$viewData = array (
+					'customers',
+					'currentPage',
+					'mainMenu',
+					'provinces' 
+			);
+			return View::make ( 'pages.customers.prospectuslist', compact ( $viewData ) );
+		} else {
+			return Redirect::to ( "/" );
+		}
+        }
 	
 	public function add() {
 		if (Auth::check ()) {
@@ -61,6 +87,7 @@ class CustomersController extends \BaseController {
 					//}
 					
 					//Membership 
+                                          if(isset($inputs['membershipType'])){
 					if($inputs['membershipType'] != ""){
 						
 						$membershipInput['customer_id']           = $addCustomerResult->id;
@@ -79,7 +106,7 @@ class CustomersController extends \BaseController {
 						$order['order_status']      = "completed";
 						Orders::createOrder($order);
 					}
-					
+                                          }
 					//Upload Image
 					if(Input::file('profileImage')){
 						
@@ -149,7 +176,7 @@ class CustomersController extends \BaseController {
 			$birthdays = BirthdayParties::getBirthdaysByCustomer($id);
 			
 			
-			
+			//return $customer;
 			
 			//Membership
 			if (isset ($inputs['membershipTypesMembersDiv'])){
@@ -184,13 +211,23 @@ class CustomersController extends \BaseController {
 			print_r($customer);
 			echo '</pre>';
 			exit(); */
-			
+			$presentDate=  Carbon::now();
+                        $membershipStartDate=Carbon::now();
+                        $membershipEndDate=Carbon::now();
 			$customerMembershipId = '';
 			if(isset($customer->CustomerMembership['0'])){
-				$customerMembershipId = $customer->CustomerMembership['0']->membership_type_id;
+                                $select=(count($customer->CustomerMembership)-1);
+                                $membershipStartDate=$membershipStartDate->createFromFormat('Y-m-d', $customer->CustomerMembership[$select]->membership_start_date);
+                                $membershipEndDate=$membershipEndDate->createFromFormat('Y-m-d', $customer->CustomerMembership[$select]->membership_end_date);
+                                if($membershipStartDate->lte($presentDate)  && $membershipEndDate->gte($presentDate)){
+                                $customerMembershipId = $customer->CustomerMembership[$select]->membership_type_id;    
+                                }
+				
 			}
+                        if(isset($customerMembershipId)){
 			$customerMembership = MembershipTypes::getMembershipTypeByID($customerMembershipId);
-			$membershipTypesAll = MembershipTypes::getMembershipTypes();
+                        }
+                        $membershipTypesAll = MembershipTypes::getMembershipTypes();
 			
                         $birthdaypaiddata =Orders::getBirthdayfulldata($id); 
                        for($i=0;$i<count($birthdaypaiddata);$i++){
@@ -216,6 +253,114 @@ class CustomersController extends \BaseController {
                              $birthdayDuedata[$i]['birthday_party_date']=$birthdayData[0]['birthday_party_date'];
                              
                          }
+                         //followup_data
+                         
+                         $iv_data=IntroVisit::where('customer_id','=',$id)
+                                                  ->get();
+                         for($i=0;$i<count($iv_data);$i++){
+                             $comments_data=Comments::where('introvisit_id','=',$iv_data[$i]['id'])
+                                                      ->orderBy('id','DESC')
+                                                      ->first();
+                             $iv_data[$i]['comment_data']=$comments_data;
+                             $student=Students::find($iv_data[$i]['student_id']);
+                             $iv_data[$i]['student_name']=$student['student_name'];
+                             $iv_data[$i]['iv_date']=date("Y-m-d",strtotime($iv_data[$i]['iv_date']));
+
+                         }
+                         $birthday_data=BirthdayParties::where('customer_id','=',$id)
+                                                         ->get();
+                         for($i=0;$i<count($birthday_data);$i++){
+                         $birthday_comments=Comments::where('birthday_id','=',$birthday_data[$i]['id'])
+                                                      ->orderBy('id','DESC')
+                                                      ->first();
+                         $birthday_data[$i]['comment_data']=$birthday_comments;
+                         $student_data=Students::find($birthday_data[$i]['student_id']);
+                         $birthday_data[$i]['student_name']=$student_data['student_name'];
+                         $birthday_data[$i]['birthday_party_date']=date("Y-m-d",strtotime($birthday_data[$i]['birthday_party_date']));
+
+                         }
+                         
+                       //for complaints  
+                         $complaint_data=Complaint::getComplaintByCustomerId($id);
+                         //Comments::where('customer_id','=',$id)->get();
+                         for($i=0;$i<count($complaint_data);$i++){
+                             $complaint_data[$i]['comments']=Comments::where('complaint_id','=',$complaint_data[$i]['id'])
+                                       ->orderBy('id','DESC')
+                                       ->first();
+                             $student_data=  Students::find($complaint_data[$i]['student_id']);
+                             $complaint_data[$i]['student_name']=$student_data['student_name'];
+                         }
+                         
+                      //for retention
+                         $retention_data=Retention::getRetentionByCustomerId($id);
+                         for($i=0;$i<count($retention_data);$i++){
+                               $retention_data[$i]['comments']=  Comments::where('retention_id','=',$retention_data[$i]['id'])
+                                                                 ->orderBy('id','DESC')
+                                                                 ->first();
+                               $student_data=  Students::find($retention_data[$i]['student_id']);
+                               $retention_data[$i]['student_name']=$student_data['student_name'];
+                         }
+                         
+                      //for inquiry
+                         $inuiry_data=Inquiry::getInquiryByCustomerId($id);
+                         for($i=0;$i<count($inuiry_data);$i++){
+                             $inuiry_data[$i]['comments']=Comments::where('inquiry_id','=',$inuiry_data[$i]['id'])
+                                                          ->orderBy('id','DESC')
+                                                          ->first();
+                             
+                         }
+                         
+                     //for enrollment payment followup/brush up calls
+                         $enrollmentFollowupData=  PaymentFollowups::getPaymentFollowupByCustomerId($id);
+                           for($i=0;$i<count($enrollmentFollowupData);$i++){
+                           
+                           $enrollmentFollowupData[$i]['comments']=Comments::where('paymentfollowup_id','=',$enrollmentFollowupData[$i]['id'])
+                                                                             ->orderBy('id','DESC')
+                                                                             ->first();
+                           $student_data=  Students::find($enrollmentFollowupData[$i]['student_id']);
+                           $enrollmentFollowupData[$i]['student_name']=$student_data['student_name'];
+                           $paymentDueData= PaymentDues::find($enrollmentFollowupData[$i]['payment_due_id']);
+                           $enrollmentFollowupData[$i]['payment_date']=$paymentDueData['end_order_date'];
+                           }
+                           
+                        // for customer kids enrollment.  
+                          
+                        $customer_student_data=  Students::where('customer_id','=',$id)
+                                                 ->where('franchisee_id','=',  Session::get('franchiseId'))
+                                                 ->select('id','student_name')
+                                                 ->get();
+                        for($i=0;$i<count($customer_student_data);$i++){
+                            $student_classes=StudentClasses::getEnrolledStudentBatch($customer_student_data[$i]['id']);
+                            //return $student_classes[0]['batch_id'];
+                            $customer_student_data[$i]['student_classes_data']=$student_classes;
+                        }
+                        //return $customer_student_data;
+                        for($i=0;$i<count($customer_student_data);$i++){
+                            for($j=0;$j<count($customer_student_data[$i]['student_classes_data']);$j++){
+                                $find=  Batches::find($customer_student_data[$i]['student_classes_data'][$j]['batch_id']);
+                                $customer_student_data[$i]['student_classes_data'][$j]['batch_name']=$find->batch_name;
+                            }
+                        }
+                        
+                        //return the customer membership follolwup
+                        $customer_membership_data= MembershipFollowup::where('customer_id','=',$id)
+                                                                        ->get();
+                        for($i=0;$i<count($customer_membership_data);$i++){
+                           $membershipid[$i]= $customer_membership_data[$i]['id'];
+                           
+                        }
+                        if(isset($membershipid)){
+                       for($i=0;$i<count($membershipid);$i++){
+                           $membership_followup_data[$i]=Comments::where('membership_followup_id','=',$membershipid[$i])
+                                                          ->orderBy('id','DESC')
+                                                          ->first();
+                           $memfollowup_data= MembershipFollowup::find($membershipid[$i]);
+                           $Customer_membership_data =  CustomerMembership::find($memfollowup_data->membership_id);
+                          
+                           $membership_followup_data[$i]['membership_end_date']=$Customer_membership_data->membership_end_date;
+                        }
+                        }
+                        
 			$viewData = array (
                                         'birthdaypaiddata',
                                         'birthdayDuedata',
@@ -229,7 +374,16 @@ class CustomersController extends \BaseController {
 					'kidsSelect',
 					'membershipTypes',
 					'membershipTypesAll',
-					'birthdays'
+					'birthdays',
+                                        'iv_data',
+                                        'birthday_data',
+                                        'complaint_data',
+                                        'retention_data',
+                                        'inuiry_data',
+                                        'enrollmentFollowupData',
+                                        'customer_student_data',
+                                        'membership_followup_data',
+                                        
 			);
 			return View::make ( 'pages.customers.details', compact ( $viewData ) );
 		}else{
@@ -281,15 +435,103 @@ class CustomersController extends \BaseController {
 			$editCustomerResult = Customers::saveCustomers ( $inputs );
 			if($editCustomerResult){
 				return Response::json(array("status"=>"success"));
-			}
+			}else{
 			return Response::json(array("status"=>"failed"));
-			
+			}
 		}
 		
 	}
+        
+        public function getScheduledIntrovisitByCustomerId(){
+            $inputs = Input::all();
+            $iv_data=IntroVisit::with('students','classes','batches')->where('customer_id','=',$inputs['customerId'])->get();
+            return Response::json(array('status'=>'success','data'=>$iv_data));
+        }
 	
-	
-	
+        
+         public function getIntrovisitByCustomerStatus(){
+            $inputs=Input::all();
+            $iv_data=  IntroVisit::with('students','classes','batches')
+                                   ->where('customer_id','=',$inputs['customerId'])
+                                   ->whereIn('status',array('ACTIVE/SCHEDULED','RESCHEDULED'))
+                                   ->get();
+            return Response::json(array('status'=>'success','data'=>$iv_data));
+        }
+        
+        public function changeIvStatustoAttendedByIVid(){
+            $inputs=Input::all();
+            $iv_data=  IntroVisit::find($inputs['iv_id']);
+            $iv_data->status='ATTENDED';
+            $iv_data->save();
+            if($iv_data){
+                return Response::json(array('status'=>'succes'));
+            }
+        }
+        
+        
+        
+        public function getMembershipHistory(){
+            $inputs=Input::all();
+            $membershipHistoryData=Comments::getMembershipHistoryById($inputs['membership_id']);
+            for($i=0;$i<count($membershipHistoryData);$i++){
+                $user_data=User::find($membershipHistoryData[$i]['created_by']);
+                $membershipHistoryData[$i]['commentor_name']=$user_data->first_name.$user_data->last_name;
+            }
+            return Response::json(array('status'=>'success','historyData'=>$membershipHistoryData));
+        }
+        
+        
+        
+        public function  updateMembershipFollowup(){
+            $inputs=Input::all();
+            $membership_data_make_reminder_null= Comments::where('membership_followup_id','=',$inputs['membership_followup_id'])
+                                               ->update(array('reminder_date'=>Null,));
+            $membership_data=Comments::where('membership_followup_id','=',$inputs['membership_followup_id'])
+                                               ->orderBy('id','DESC')
+                                               ->first();
+           if($inputs['followup_status']=='REMINDER_CALL'){
+                $commentText = "Reminder call  ".'on  '.date('Y-m-d', strtotime($inputs['remider_date'])).' '.$inputs['comment'];
+				
+                
+            }elseif($inputs['followup_status']=='FOLLOW_CALL'){
+                $commentText = "Follow call  ".'on  '.date('Y-m-d', strtotime($inputs['remider_date'])).' '.$inputs['comment'];
+		
+            }elseif($inputs['followup_status']=='CALL_SPOUSE'){
+                $commentText = "Call Spouse ".'on  '.date('Y-m-d', strtotime($inputs['remider_date'])).' '.$inputs['comment'];
+            }elseif($inputs['followup_status']=='NOT_AVAILABLE'){
+                $commentText = "NOT AVAILABLE".'on '.date('Y-m-d', strtotime($inputs['remider_date'])).' '.$inputs['comment'];
+            }elseif($inputs['followup_status']=='NOT_INTERESTED'){
+                $commentText = "Not Available  ".'on  '.date('Y-m-d').' '.$inputs['comment'];
+		        
+            }elseif($inputs['followup_status']=='CLOSE_CALL'){
+                $commentText="Followupcall closed on ".date('Y-m-d').' '.$inputs['comment'];
+            }
+            
+            
+                        $commentsInput['customerId']     = $membership_data['customer_id'];
+                        //$commentsInput['student_id']     = $membership_data['student_id'];
+                        $commentsInput['membership_followup_id']  = $membership_data['membership_followup_id'];
+                        $commentsInput['followupType']  = $membership_data['followup_type'];
+                        $commentsInput['commentStatus']= $inputs['followup_status'];
+                        $commentsInput['commentType']   = $inputs['comment_type']; 
+                           
+			$commentsInput['commentText']    = $commentText;
+		      	
+                        if(($inputs['followup_status']== 'CLOSE_CALL')){
+                            if(($inputs['followup_status']!= 'NOT_INTERESTED')){
+                               if(isset($inputs['remider_date'])){
+                                   $commentsInput['reminderDate']   = $inputs['remider_date'];
+                               }
+                            }
+                        }
+                        
+                        
+                       Comments::addComments($commentsInput);
+            
+            
+            
+            return Response::json(array('status'=>'success'));
+        }
 		/**
 	 * Store a newly created resource in storage.
 	 *

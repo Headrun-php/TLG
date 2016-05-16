@@ -289,6 +289,9 @@ $("input[name='paymentTypeRadio']").change(function (){
 	
 });
 	
+$(document).ready(function(){
+   $('.followup').hide();
+})
 </script>
 
 @stop
@@ -297,7 +300,7 @@ $("input[name='paymentTypeRadio']").change(function (){
 <div id="breadcrumb">
 	<ul class="crumbs">
 		<li class="first"><a href="{{url()}}" style="z-index:9;"><span></span>Home</a></li>
-		<li><a href="{{url()}}/customers" style="z-index:8;">Customers</a></li>
+		<li><a href="{{url()}}/customers/memberslist" style="z-index:8;">Customers</a></li>
 		<li><a href="#" style="z-index:7;">New Customers</a></li>
 	</ul>
 </div>
@@ -341,20 +344,29 @@ $("input[name='paymentTypeRadio']").change(function (){
 					<br clear="all"/>
                     
                        {{ Form::open(array('files'=> true,'url' => '/customers/add', 'id'=>"addCustomerForm", "class"=>"uk-form-stacked", 'method' => 'post')) }} 
-                        <div class="uk-grid" data-uk-grid-margin>
-			             	<div class="uk-width-medium-1-3">
+                        
+                                    <div class="uk-grid" data-uk-grid-margin>
+                                            <div class="uk-width-medium-1-2">
 				                 <div class="parsley-row form-group">
-				                 	<label for="customerName">Customer Name<span class="req">*</span></label>
+				                 	<label for="customerName">CustomerFirstName<span class="req">*</span></label>
 				                 	{{Form::text('customerName', null,array('id'=>'customerName', 'required'=>'', 'class' => 'form-control input-sm md-input'))}}
 				                 </div>
 				            </div>
-				            <div class="uk-width-medium-1-3"> 
+                                            <div class="uk-width-medium-1-2">
+				                 <div class="parsley-row form-group">
+				                 	<label for="customerLastName">Customer Last Name<span class="req">*</span></label>
+				                 	{{Form::text('customerLastName', null,array('id'=>'customerLastName', 'required'=>'', 'class' => 'form-control input-sm md-input'))}}
+				                 </div>
+				            </div>
+                                    </div>
+                                    <div class="uk-grid" data-uk-grid-margin>
+			                    <div class="uk-width-medium-1-2"> 
 				                  <div class="parsley-row form-group">
 				                 	<label for="customerEmail">Customer Email<span class="req">*</span></label>
 				                 	{{Form::email('customerEmail', null,array('id'=>'customerEmail', 'required'=>'', 'class' => 'form-control input-sm md-input'))}}
 				                 </div>
 				            </div>    
-				            <div class="uk-width-medium-1-3">    
+				            <div class="uk-width-medium-1-2">    
 				                  <div class="parsley-row form-group">
 				                 	<label for="customerMobile">Customer Mobile<span class="req">*</span></label>
 				                 	
@@ -362,7 +374,7 @@ $("input[name='paymentTypeRadio']").change(function (){
 				                 </div>
 				            </div>  
 				            <br clear="all"/><br clear="all"/><br clear="all"/>
-				        </div>    
+				   </div>    
 				        
 				        
 				        <br clear="all"/>
@@ -393,20 +405,20 @@ $("input[name='paymentTypeRadio']").change(function (){
 				             <br clear="all"/>
 				             <div class="uk-width-medium-1-3">
 				                 <div class="parsley-row form-group">
-				                 	<label for="locality">Locality<span class="req">*</span></label>
-				                 	{{Form::text('locality', null,array('id'=>'locality', 'required'=>'', 'class' => 'form-control input-sm md-input'))}}
+				                 	<label for="locality">Locality</label>
+				                 	{{Form::text('locality', null,array('id'=>'locality', 'class' => 'form-control input-sm md-input'))}}
 				                 </div>
 				             </div>
 				             <div class="uk-width-medium-1-3">
 				                 <div class="parsley-row form-group">
-				                 	<label for="state">State<span class="req">*</span></label>
-				                 	{{ Form::select('state', array('' => '') + $provinces, null ,array('id'=>'state', 'class' => 'input-sm md-input', "required"=>"", "placeholder"=>"Institution type", "style"=>'padding:0px; font-weight:bold;color: #727272;')) }}
+				                 	<label for="state">State</label>
+				                 	{{ Form::select('state', array('' => '') + $provinces, null ,array('id'=>'state', 'class' => 'input-sm md-input', "placeholder"=>"Institution type", "style"=>'padding:0px; font-weight:bold;color: #727272;')) }}
 				                 </div>
 				            </div>
 				            <div class="uk-width-medium-1-3">
 				                 <div class="parsley-row form-group">
-				                 	<label for="state">City<span class="req">*</span></label>
-				                 	{{ Form::select('city', array('' => ''), null ,array('id'=>'city', 'class' => 'input-sm md-input',  'required'=>'', "placeholder"=>"Institution type", "style"=>'padding:0px; font-weight:bold;color: #727272;')) }}
+				                 	<label for="state">City</label>
+				                 	{{ Form::select('city', array('' => ''), null ,array('id'=>'city', 'class' => 'input-sm md-input', "placeholder"=>"Institution type", "style"=>'padding:0px; font-weight:bold;color: #727272;')) }}
 				                 </div>
 				            </div>
 				            <br clear="all"/><br clear="all"/><br clear="all"/>
@@ -417,8 +429,8 @@ $("input[name='paymentTypeRadio']").change(function (){
 				        	<br clear="all"/>
 				            <div class="uk-width-medium-1-3"> 
 				                  <div class="parsley-row form-group">
-				                 	<label for="zipcode">Zipcode<span class="req">*</span></label>
-				                 	{{Form::text('zipcode', null,array('id'=>'zipcode', 'required'=>'',  "onkeypress"=>"return isNumberKey(event);", 'maxlength'=>'6', 'class' => 'form-control input-sm md-input','style'=>'padding:0px'))}}
+				                 	<label for="zipcode">Zipcode</label>
+				                 	{{Form::text('zipcode', null,array('id'=>'zipcode', "onkeypress"=>"return isNumberKey(event);", 'maxlength'=>'6', 'class' => 'form-control input-sm md-input','style'=>'padding:0px'))}}
 				                 </div>
 				            </div>    
 				             
@@ -430,9 +442,9 @@ $("input[name='paymentTypeRadio']").change(function (){
 			                </div>
 			                <div class="uk-width-medium-1-3">    
 				                  <div class="parsley-row form-group">
-				                 	<label for="source">Source<span class="req">*</span></label>
+				                 	<label for="source">Source</label>
 				                 	
-				                 	{{ Form::select('source', array('' => '', 'word of moutn' => 'Word of Mouth', 'grass roots' => 'Grassroots', 'walkin' => 'Walkin', 'events' => 'Events'), null ,array('id'=>'source', 'class' => 'input-sm md-input',  'required'=>'', "placeholder"=>"Institution type", "style"=>'padding:0px; font-weight:bold;color: #727272;')) }}
+				                 	{{ Form::select('source', array('' => '', 'word of mouth' => 'Word of Mouth', 'grass roots' => 'Grassroots', 'walkin' => 'Walkin', 'events' => 'Events','social media'=>'Social media','bussiness dev - schools apart'=>'Bussiness dev - schools apart','internal marketing'=>'Internal marketing','external gross root events'=>'External gross root events','business partnerships'=>'Business partnerships','internal events'=>'Internal events','PR'=>'PR','sales and telemarketing'=>'Sales and telemarketing','mass marketing'=>'Mass marketing','service calls'=>'Service calls'), null ,array('id'=>'source', 'class' => 'input-sm md-input',"placeholder"=>"Institution type", "style"=>'padding:0px; font-weight:bold;color: #727272;')) }}
 				                 </div>
 				            </div> 
 				            <br clear="all"/><br clear="all"/>
@@ -470,24 +482,27 @@ $("input[name='paymentTypeRadio']").change(function (){
 				            </div>
 				            <br clear="all"/>
 			            </div> -->
+                                  
+                                  
+                                  
 			            <div id="submitMsgDiv"></div>
 			            
 						<div class="uk-grid" data-uk-grid-margin>
                         	<div id="commentMsgDiv">
                         	</div>
-					   		<div class="uk-width-medium-1-1">							             		 
+					   		<div class="uk-width-medium-1-1 followup" >							             		 
 							    <div class="parsley-row form-group">
 								    <label for="customerCommentTxtarea">Comment<span class="req"></span></label> 
 								    {{ Form::textarea('customerCommentTxtarea', null, ['id'=>'customerCommentTxtarea', 'size' => '50x3',  'class' => 'form-control input-sm md-input']) }}
 							    </div><br>
 						    </div>     
-						    <div class="uk-width-medium-1-3">
+						    <div class="uk-width-medium-1-3 followup">
 						     	<div class="parsley-row form-group">
 						    		<label for="reminderTxtBox">Reminder date<span class="req">*</span></label> 
 						    		{{Form::text('reminderTxtBox', null,array('id'=>'reminderTxtBox', 'class' => ''))}}								                 	
 					    		</div>
 						    </div>
-						    <div class="uk-width-medium-1-3">
+						    <div class="uk-width-medium-1-3 followup">
 				                 <div class="parsley-row form-group">
 				                 	<label for="commentType">Comment Type<span class="req">*</span></label>
 				                 	<!-- array('' => '', 'followup' => 'Followup', 'attended_iv' => 'Attended IV', 'iv_no_show' => 'IV No show', 'missed_call' => 'Missed Call') -->
@@ -496,9 +511,10 @@ $("input[name='paymentTypeRadio']").change(function (){
 				            </div>
 				         </div>	 
 				         
-				         
+		      		         
 				         <br clear="all"/><br clear="all"/>
-				         <h4>Membership details</h4>
+				         <!--
+                                         <h4>Membership details</h4>
 				         <br clear="all"/>
 				         <div class="uk-grid" data-uk-grid-margin>
 					   		<div class="uk-width-medium-1-2">							             		 
@@ -592,7 +608,7 @@ $("input[name='paymentTypeRadio']").change(function (){
 
 							</div>
 						 
-				         
+				        --> 
 				         
 				         <br clear="all"/><br clear="all"/>
 				         <div class="uk-grid" data-uk-grid-margin>

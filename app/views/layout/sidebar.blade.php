@@ -31,10 +31,9 @@
                         <span class="menu_title">Customers</span>
                     </a>
                     <ul id="CUSTOMERS_MAIN_UL">
-                        <li id="CUSTOMERS_LIST"><a href="{{url()}}/customers">Customers List</a></li>
-                        <li id="CUSTOMERS_ADD"><a href="{{url()}}/customers/add">Add Customers</a></li>
-                        <li id="CUSTOMERS_ADD"><a href="{{url()}}/customers/add">Prospects</a></li>
-                        
+                        <li id="PROSPECTUS_LIST"><a href="{{url()}}/customers/prospectslist">Prospects List</a></li>
+                        <li id="MEMBERS_LIST"><a href="{{url()}}/customers/memberslist">Members List</a></li>
+                        <li id="CUSTOMERS_ADD"><a href="{{url()}}/customers/add">Add Customers</a></li>    
                     </ul>
                 </li>
                  <li id="STUDENTS_MAIN">
@@ -43,8 +42,8 @@
                         <span class="menu_title">Kids</span>
                     </a>
                     <ul id="STUDENTS_MAIN_UL">
-                        <li id="STUDENTS"><a href="{{url()}}/students">Kids List</a></li>
-                        
+                        <li id="NONENROLLEDSTUDENTS"><a href="{{url()}}/students/nonenrolled">Non Enrolled Kids</a></li>
+                        <li id="ENROLLEDSTUDENTS"><a href="{{url()}}/students/enrolled">Enrolled Kids</a></li>
                     </ul>
                 </li>
                 
@@ -61,25 +60,27 @@
                 </li>
                
                 
-                <li id="EVENTS_MAIN">
-                    <a href="#">
-                        <span class="menu_icon"><i class="material-icons">&#xE8D2;</i></span>
-                        <span class="menu_title">Events</span>
-                    </a>
-                    <ul id="EVENTS_MAIN_UL">
-                       <!--  <li id="COURSES"><a href="{{url()}}/courses">Courses</a></li>
-                        <li id="CLASSES"><a href="{{url()}}/classes">Classes</a></li> -->
-                        <li id="EVENTS"><a href="{{url()}}/events">Events</a></li>
-                        <li id="EVENT_TYPES"><a href="{{url()}}/events/types">Event Types</a></li>
-                    </ul>
-                </li>
+                
                 
                  <li id="EVENTS_MAIN">
                  	<hr/>
                  </li>
                 
                 <?php if(Session::get('userType') == 'ADMIN'){?>
-                
+                        <li id="EVENTS_MAIN">
+                            <a href="#">
+                                <span class="menu_icon"><i class="material-icons">&#xE8D2;</i></span>
+                                <span class="menu_title">Events</span>
+                            </a>
+                            <ul id="EVENTS_MAIN_UL">
+                                 <!--  <li id="COURSES"><a href="{{url()}}/courses">Courses</a></li>
+                                 <li id="CLASSES"><a href="{{url()}}/classes">Classes</a></li> -->
+                                 <li id="EVENTS"><a href="{{url()}}/events">Events</a></li>
+                                 <li id="EVENT_TYPES"><a href="{{url()}}/events/types">Event Types</a></li>
+                            </ul>
+                        </li>
+                 
+                 
                 	 <li id="USERS_MAIN">
 	                    <a href="#">
 	                        <span class="menu_icon"><i class="material-icons">&#xE8D2;</i></span>
@@ -92,6 +93,7 @@
 	                        <li id="ADD_USERS"><a href="{{url()}}/admin/users/add">Add User</a></li>
 	                    </ul>
 	                </li>
+                        <?php if(Session::get('userType') == 'SUPER_ADMIN'){?>
 	                 <li id="COURSES_MENU_MAIN">
 	                    <a href="#">
 	                        <span class="menu_icon"><i class="material-icons">&#xE8D2;</i></span>
@@ -114,6 +116,29 @@
 	                        <li id="CLASSES_LI"><a href="{{url()}}/classes">Classes</a></li>
 	                    </ul>
 	                </li>
+                        <?php }?>
+                        <li id="SEASONS_MENU_MAIN">
+	                    <a href="#">
+	                        <span class="menu_icon"><i class="material-icons">&#xE8D2;</i></span>
+	                        <span class="menu_title">Seasons</span>
+	                    </a>
+	                    <ul id="SEASONS_MENU_MAIN_UL">
+	                        <li id="AddSeasons_LI"><a href="{{url()}}/season/add">Add Sesason</a></li>
+                                <li id="ViewSeasons_LI"><a href="{{url()}}/season/viewseasons">View Seasons</a></li>
+	                    </ul>
+	                </li>
+
+                    <li id="DISCOUNTS_MENU_MAIN">
+                        <a href="#">
+                            <span class="menu_icon"><i class="material-icons">&#xE8D2;</i></span>
+                            <span class="menu_title">Prices&Discounts</span>
+                        </a>
+                        <ul id="DISCOUNTS_MENU_MAIN_UL">
+                            <li id="AddPrices_LI"><a href="{{url()}}/prices/add_or_view_prices">Add/View Prices</a></li>
+                            <li id="AddDiscounts_LI"><a href="{{url()}}/Discounts/add_or_view_discounts">Add/View Discounts</a></li>
+                            <li id="EnableDiscounts_LI"><a href="{{url()}}/Discounts/enable_or_desable">Enable/Disable Discounts</a></li>
+                        </ul>
+                    </li>
                 <?php }?>
                 
                 

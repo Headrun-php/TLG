@@ -1,5 +1,5 @@
 <?php
-
+use Carbon\Carbon;
 class StudentClasses extends \Eloquent {
 	protected $fillable = [];
 	public $table = "student_classes";
@@ -26,16 +26,90 @@ class StudentClasses extends \Eloquent {
 	}
 	
 	
+	static function getAllEnrolledStudents($franchiseeId){
+		$present_date=Carbon::now();
+                $students=StudentClasses::with(array('Students'=>function($q){
+                    $q->where('franchisee_id','=', Session::get('franchiseId'))
+                      ->select('id','students.*');
+                }))//->whereDate('enrollment_start_date','<=',$present_date->toDateString())
+                   ->whereDate('enrollment_end_date','>=', $present_date->toDateString())
+                   ->distinct('student_id')
+                   ->groupBy('student_id')
+                   ->get();
+                                      
+		return $students;
+	}
+        static function getAllNonEnrolledStudents($franchiseeId){
+		
+                $present_date=Carbon::now();
+                /*
+                return $present_date->toDateString();
+                return StudentClasses::with(array('Students'=>function($q){
+                    $q->where('franchisee_id','=', Session::get('franchiseId'))->get();
+                }))->whereDate('enrollment_start_date','<=',$present_date->toDateString())
+                   ->whereDate('enrollment_end_date','>=', $present_date->toDateString())
+                   ->distinct('student_id')
+                   ->groupBy('student_id')
+                   ->select('student_id')
+                   ->get();
+                   */
+                $students=StudentClasses::with(array('Students'=>function($q){
+                    $q->where('franchisee_id','=', Session::get('franchiseId'))
+                       ->get();
+                       
+                }))//->whereDate('enrollment_start_date','<=',$present_date->toDateString())
+                   ->whereDate('enrollment_end_date','>=', $present_date->toDateString())
+                   ->distinct('student_id')
+                   ->groupBy('student_id')
+                   ->select('student_id')
+                   ->get();
+                
+                
+                for($i=0;$i<count($students);$i++){
+                    $student_id[]=$students[$i]->student_id;
+                }
+                
+                if(isset($student_id)){
+                $nonEnrolledStudents=  Students::where('franchisee_id','=', Session::get('franchiseId'))
+                                                 ->whereNotIn('id',$student_id)
+                                                 ->get();
+                }else{                               
+                $nonEnrolledStudents[0]='';                      
+                }
+                
+                return $nonEnrolledStudents;
+	}
+        
+        
+        static function getEnrolledStudentBatch($studentId){
+                
+		$present_date=Carbon::now();
+                $students=StudentClasses:://->whereDate('enrollment_start_date','<=',$present_date->toDateString())
+                          whereDate('enrollment_end_date','>=', $present_date->toDateString())
+                   ->where('student_id','=',$studentId)     
+                   ->orderBy('id','DESC')
+                   ->get();
+                                      
+		return $students;
+	}
 	
+        
+        
 	static function addStudentClass($input){
 		
 		
 		$StudentClasses = new StudentClasses();
 		$StudentClasses->student_id    = $input['studentId'];
+                $StudentClasses->season_id     = $input['seasonId'];
 		$StudentClasses->class_id      = $input['classId'];		
 		$StudentClasses->enrollment_start_date  = $input['enrollment_start_date'];
 		$StudentClasses->enrollment_end_date  = $input['enrollment_end_date'];		
 		$StudentClasses->selected_sessions  = $input['selected_sessions'];
+                if(isset($input['status'])){
+                    $StudentClasses->status=$input['status'];
+                }else{
+                    $StudentClasses->status="enrolled";
+                }
 		$StudentClasses->batch_id      = $input['batchId'];
 		$StudentClasses->created_by    = Session::get('userId');
 		$StudentClasses->created_at    = date("Y-m-d H:i:s");
@@ -63,8 +137,8 @@ class StudentClasses extends \Eloquent {
 		
 		$enrolledCustomers = DB::table('students')
 		->join('student_classes', 'student_classes.student_id', '=', 'students.id')
-		->join('batches', 'batches.id', '=', 'student_classes.batch_id')
-		->where('batches.franchisee_id','=',$franchiseeId)
+		//->join('batches', 'batches.id', '=', 'student_classes.batch_id')
+		->where('students.franchisee_id','=',$franchiseeId)
 		->count();
 		
 		
@@ -84,6 +158,22 @@ class StudentClasses extends \Eloquent {
 		return false;
 	}
 	
+        static function getTodaysEnrolledCustomers(){
+            $franchiseeId = Session::get('franchiseId');
+		
+		$todaysEnrolledCustomers = DB::table('students')
+		->join('student_classes', 'student_classes.student_id', '=', 'students.id')
+		//->join('batches', 'batches.id', '=', 'student_classes.batch_id')
+		->where('students.franchisee_id','=',$franchiseeId)
+                ->whereDate('student_classes.created_at','=',date("Y-m-d"))
+		->count();
+                if($todaysEnrolledCustomers){ 
+                    return $todaysEnrolledCustomers;
+                    
+                }return false;
+                
+        }
+        
 	static function getStudentByBatchId($batchId, $selectedDate){
 		$selectedDate = date('Y-m-d', strtotime($selectedDate));
 		$studentByBatchId  =   StudentClasses::with('Students')
@@ -130,7 +220,7 @@ class StudentClasses extends \Eloquent {
 		}
 		
 		$isCurrentStudentEnrolled = StudentClasses::where('student_id', '=', $studentId)
-		->count();
+                                            ->count();
 		if($isCurrentStudentEnrolled > 0){
 			$isEligibleforFifty = "YES";
 		}

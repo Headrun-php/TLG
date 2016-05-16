@@ -1,7 +1,7 @@
 <?php
 
 class Courses extends \Eloquent {
-	protected $fillable = [];
+	protected $fillable = ['courseName','masterCourse'];
 	protected $table = 'courses';
 	
 	private $rules = array(
@@ -47,11 +47,27 @@ class Courses extends \Eloquent {
 		return $this->errors;
 	}
 	
-	static function addCourse($inputs){
+//	static function addCourse($inputs){
+//	
+//		
+//		$Course = new Courses();
+//		$Course->course_name      = $inputs['courseName'];
+//		$Course->master_course_id = $inputs['masterCourse'];
+//		$Course->franchisee_id    = Session::get('franchiseId');
+//		$Course->created_by       = Session::get('userId');
+//		$Course->created_at       = date("Y-m-d H:i:s");
+//		$Course->save();
+//		
+//		return $Course;
+//	
+//	
+//	}
+        static function addCourse($inputs){
 	
 		
 		$Course = new Courses();
 		$Course->course_name      = $inputs['courseName'];
+                $Course->slug             = $inputs['slug'];
 		$Course->master_course_id = $inputs['masterCourse'];
 		$Course->franchisee_id    = Session::get('franchiseId');
 		$Course->created_by       = Session::get('userId');
@@ -95,12 +111,12 @@ class Courses extends \Eloquent {
 		return $courses;
 	}
 	
-	static function getBatchID($courseId, $classId, $startYear, $startMonth){
+	static function getBatchID($courseId, $classId, $startYear, $startMonth,$seasonId){
 		
 		
 		if(Batches::count()){
 			
-			$batchCount = (Batches::where("class_id","=",$classId)->count()+1);
+			$batchCount = (Batches::where("class_id","=",$classId)->where('season_id','=',$seasonId)->count()+1);
 		}else{
 			$batchCount = 1;
 		}
@@ -112,10 +128,10 @@ class Courses extends \Eloquent {
 		$courseSlug = Courses::select("slug")->where("id", "=", $courseId)->get();
 		
 		$classSlug  = Classes::select("slug")->where("id", "=", $classId)->get();
-		$yearSlug   = date("y", strtotime($startYear));
+		$yearSlug   = date("Y", strtotime($startYear));
 		$monthSlug  = date("M", strtotime($startYear));
 		
-		$batchSlug = $courseSlug['0']->slug.$classSlug['0']->slug.strtoupper($monthSlug).$yearSlug.$batchCount;
+		$batchSlug = $courseSlug['0']->slug.'-'.$classSlug['0']->slug.'-'.strtoupper($monthSlug).'-'.$yearSlug.'-'.$batchCount;
 		//print_r($classSlug['0']->slug);
 		return $batchSlug;
 		

@@ -45,8 +45,8 @@ class VaultController extends \BaseController {
 					Session::put('firstName', $userObject->first_name);
 					Session::put('lastName', $userObject->last_name);
 					Session::put('userType', $userObject->user_type);
-					
-					
+					//Session::put('classAmount',$userObject->franchisee->franchisee_class_amount);
+					//return Session::get('classAmount');
 					
 					return Redirect::to('/dashboard');
 				}
